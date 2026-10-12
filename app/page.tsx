@@ -19,6 +19,8 @@ export default function Home() {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [watchOnly, setWatchOnly] = useState(false);
   const [hotOnly, setHotOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const perPage = 50;
   const [alerts, setAlerts] = useState<string[]>([]);
   const lastValuesRef = useRef<Record<string, number>>({});
   const [updatedAt, setUpdatedAt] = useState("");
@@ -94,6 +96,8 @@ export default function Home() {
 
   useEffect(() => { load(); const timer = setInterval(load, 30000); return () => clearInterval(timer); }, [load]);
 
+  useEffect(() => { setPage(1); }, [chain, search, watchOnly, hotOnly, sort]);
+
   const historyTokenIds = useMemo(() => Object.keys(history).filter((id) => (history[id] || []).length > 0), [history]);
   const activeHistoryId = historyTokenIds.includes(selectedHistoryToken) ? selectedHistoryToken : (historyTokenIds[0] || "");
   const historyChartData = useMemo(() => (history[activeHistoryId] || []).map((point) => ({ time: point.time, volume: point.volume })), [history, activeHistoryId]);
@@ -119,6 +123,8 @@ export default function Home() {
   }, [data, chain, search, watchOnly, watchlist, sort, hotOnly]);
 
   const totalVolume = data.tokens.reduce((sum, row) => sum + (volumeAll(row) ?? 0), 0);
+  const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
+  const paginatedRows = rows.slice((page - 1) * perPage, page * perPage);
   const toggleWatch = (id: string) => setWatchlist((old) => old.includes(id) ? old.filter((x) => x !== id) : [...old, id]);
 
   return <main className="shell">
@@ -165,7 +171,7 @@ export default function Home() {
       <div className="table-scroll"><table>
         <thead><tr><th># / TOKEN</th><th>CHAIN</th><th>PRICE USD</th><th>MARKET CAP SINCE LAUNCH</th><th>VOLUME · ALL</th><th>VOLUME 24H</th><th>BUYS / SELLS</th><th>HOLDERS</th><th>AGE</th><th>TREND SCORE</th><th></th></tr></thead>
         <tbody>
-          {rows.map((row, index) => {
+          {paginatedRows.map((row, index) => {
             const id = `${row.chain}:${tokenAddress(row)}`;
             const b = buys(row), s = sells(row);
             const ch = chainName(row.chain);
@@ -187,6 +193,7 @@ export default function Home() {
           {!rows.length && <tr><td colSpan={9} className="empty">{loading ? "Fetching token data from OpenLaunch..." : "No tokens match the current filters. If the API failed, check the message above."}</td></tr>}
         </tbody>
       </table></div>
+      <div className="table-footer"><span>Showing {rows.length === 0 ? 0 : ((page - 1) * perPage) + 1}-{Math.min(page * perPage, rows.length)} of {rows.length} tokens</span><span><button className="watch-filter" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>◀ Previous</button> <b> Page {page} / {totalPages} </b> <button className="watch-filter" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next ▶</button></span></div>
       <footer className="table-footer"><span>Source: <a href="https://openlaunch.lol/agents" target="_blank" rel="noreferrer">OpenLaunch public JSON API ↗</a></span><span>Last refresh: {updatedAt || "Not available yet"}</span></footer>
     </section>
 
