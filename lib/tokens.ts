@@ -59,7 +59,27 @@ export function percent(value: number | null) {
   return `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 export function volumeAll(row: TokenRow) {
-  return numeric(row, ["volume_usd"]);
+  const direct = numeric(row, ["volume_usd", "volumeUsd", "total_volume_usd", "totalVolumeUsd"]);
+  if (direct !== null) return direct;
+
+  const quote = numeric(row, ["volume_quote"]);
+  const ethUsd = numeric(row, ["quote_usd"]);
+
+  if (quote !== null && ethUsd !== null) {
+    return (quote / 1e18) * ethUsd;
+  }
+
+  return numeric(row, ["volume_24h_usd", "volume24h_usd", "volume_24h"]);
+}
+
+export function radarVolume(row: TokenRow) {
+  const all = volumeAll(row);
+  const v24 = numeric(row, ["volume_24h_usd", "volume24h_usd", "volume_24h", "volume_usd_24h"]);
+
+  if (all !== null && v24 !== null) return Math.max(all, v24);
+  if (all !== null) return all;
+  if (v24 !== null) return v24;
+  return null;
 }
 
 export function volume24h(row: TokenRow) {
@@ -103,32 +123,74 @@ export function age(row: TokenRow) {
 }
 
 export function trendScore(row: TokenRow): number | null {
-  // Transparent 24-hour activity score, not an AI price prediction.
+  // Transparent activity score based on available OpenLaunch metrics.
   const components: Array<{
     value: number;
     weight: number;
     reference: number;
   }> = [];
 
-  const vol = numeric(row, [
+  const volume = numeric(row, [
+    "volume_usd",
     "volume_24h_usd",
     "volume24h_usd",
     "volume_24h",
   ]);
 
-  const traders = numeric(row, ["traders_24h_ex"]);
-  const trades = numeric(row, ["trades_24h"]);
+  const buysCount = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount",
+  ]);
 
-  if (vol !== null && vol >= 0) {
-    components.push({ value: vol, weight: 40, reference: 1000 });
+  const sellsCount = numeric(row, [
+    "sells",
+    "sell_count",
+    "sells_24h",
+    "sellCount",
+  ]);
+
+  const trades = numeric(row, [
+    "trades_24h",
+    "trade_count",
+    "trades",
+    "tx_count",
+    "transactions",
+  ]);
+
+  const traders = numeric(row, [
+    "traders_24h_ex",
+    "holders",
+  ]);
+
+  if (volume !== null && volume >= 0) {
+    components.push({
+      value: volume,
+      weight: 40,
+      reference: 100000,
+    });
+  }
+
+  const activity =
+    (buysCount ?? 0) +
+    (sellsCount ?? 0) +
+    (trades ?? 0);
+
+  if (activity > 0) {
+    components.push({
+      value: activity,
+      weight: 25,
+      reference: 10000,
+    });
   }
 
   if (traders !== null && traders >= 0) {
-    components.push({ value: traders, weight: 30, reference: 10 });
-  }
-
-  if (trades !== null && trades >= 0) {
-    components.push({ value: trades, weight: 30, reference: 10 });
+    components.push({
+      value: traders,
+      weight: 20,
+      reference: 1000,
+    });
   }
 
   if (components.length === 0) return null;
@@ -136,7 +198,8 @@ export function trendScore(row: TokenRow): number | null {
   const score = components.reduce((total, item) => {
     const scaled = Math.min(
       1,
-      Math.log10(1 + item.value) / Math.log10(1 + item.reference)
+      Math.log10(1 + item.value) /
+      Math.log10(1 + item.reference)
     );
 
     return total + scaled * item.weight;
