@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, volumeAll, volume24h, tokenImage, type TokenRow } from "@/lib/tokens";
+import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, volumeAll, radarVolume, volume24h, tokenImage, type TokenRow } from "@/lib/tokens";
 
 type ApiResponse = { tokens: TokenRow[]; errors?: string[]; source?: string; fetchedAt?: string };
 type HistoryPoint = { time: string; timestamp: number; volume: number };
@@ -110,7 +110,7 @@ export default function Home() {
       return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || (trendScore(row) ?? 0) >= 70);
     });
     filtered.sort((a, b) => {
-      if (sort === "volume") return (volumeAll(b) ?? -1) - (volumeAll(a) ?? -1);
+      if (sort === "volume") return (radarVolume(b) ?? -1) - (radarVolume(a) ?? -1);
       if (sort === "mcap") return (marketCap(b) ?? -1) - (marketCap(a) ?? -1);
       if (sort === "trades") return (tradeCount(b) ?? -1) - (tradeCount(a) ?? -1);
       const scoreA = trendScore(a);
@@ -122,7 +122,7 @@ export default function Home() {
     return filtered;
   }, [data, chain, search, watchOnly, watchlist, sort, hotOnly]);
 
-  const totalVolume = data.tokens.reduce((sum, row) => sum + (volumeAll(row) ?? 0), 0);
+  const totalVolume = data.tokens.reduce((sum, row) => sum + (radarVolume(row) ?? 0), 0);
   const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
   const paginatedRows = rows.slice((page - 1) * perPage, page * perPage);
   const toggleWatch = (id: string) => setWatchlist((old) => old.includes(id) ? old.filter((x) => x !== id) : [...old, id]);

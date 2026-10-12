@@ -4,8 +4,8 @@ export const dynamic = "force-dynamic";
 
 const BASE = process.env.OPENLAUNCH_API_BASE || "https://openlaunch.lol";
 const CHAINS = ["base", "robinhood", "arc"] as const;
-const PAGE_SIZE = 50;
-const MAX_PAGES = 5;
+const PAGE_SIZE = 100;
+const MAX_PAGES = 30;
 
 async function getChain(chain: string) {
   const tokens: any[] = [];
