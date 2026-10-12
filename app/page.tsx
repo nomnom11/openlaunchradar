@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, volumeAll, radarVolume, volume24h, tokenImage, type TokenRow } from "@/lib/tokens";
+import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, hotScore, badgeType, volumeAll, radarVolume, volume24h, tokenImage, type TokenRow } from "@/lib/tokens";
 
 type ApiResponse = { tokens: TokenRow[]; errors?: string[]; source?: string; fetchedAt?: string };
 type HistoryPoint = { time: string; timestamp: number; volume: number };
@@ -177,7 +177,7 @@ export default function Home() {
             const ch = chainName(row.chain);
             const address = tokenAddress(row);
             return <tr key={id}>
-              <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{(trendScore(row) ?? 0) >= 70 && <span className="hot-badge">HOT</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
+              <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{badgeType(row) === "HOT" && <span className="hot-badge">HOT</span>}{badgeType(row) === "WHALE" && <span className="hot-badge">WHALE</span>}{badgeType(row) === "ACTIVE" && <span className="hot-badge">ACTIVE</span>}{badgeType(row) === "NEW" && <span className="new-badge">NEW</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
               <td><span className={`chain-badge ${ch.toLowerCase()}`}>{ch}</span></td>
               <td className="numeric">{money(price(row))}</td>
               <td className="numeric">{money(marketCap(row))}</td>

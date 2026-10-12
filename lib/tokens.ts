@@ -207,3 +207,51 @@ export function trendScore(row: TokenRow): number | null {
 
   return Math.max(0, Math.min(100, Math.round(score)));
 }
+
+export function activityScore(row: TokenRow): number {
+  const buysCount = numeric(row, ["buys", "buy_count", "buys_24h", "buyCount"]) ?? 0;
+  const sellsCount = numeric(row, ["sells", "sell_count", "sells_24h", "sellCount"]) ?? 0;
+  const trades = numeric(row, ["trades_24h", "trade_count", "trades", "tx_count", "transactions"]) ?? 0;
+  const holdersCount = numeric(row, ["holders"]) ?? 0;
+
+  const activity = buysCount + sellsCount + trades;
+
+  const score =
+    Math.min(100, (Math.log10(1 + activity) / Math.log10(10000)) * 70) +
+    Math.min(30, (Math.log10(1 + holdersCount) / Math.log10(1000)) * 30);
+
+  return Math.round(score);
+}
+
+export function hotScore(row: TokenRow): number {
+  const volume = numeric(row, [
+    "volume_usd",
+    "volume_24h_usd",
+    "volume24h_usd",
+    "volume_24h",
+  ]) ?? 0;
+
+  const volumeScore = Math.min(
+    50,
+    (Math.log10(1 + volume) / Math.log10(1000000)) * 50
+  );
+
+  return Math.round(volumeScore + (activityScore(row) * 0.5));
+}
+
+export function badgeType(row: TokenRow): string {
+  const score = hotScore(row);
+  const volume = numeric(row, ["volume_usd", "volume_24h_usd"]) ?? 0;
+
+  if (score >= 75) return "HOT";
+  if (volume >= 1000000) return "WHALE";
+  if (score >= 45) return "ACTIVE";
+
+  const start = firstValue(row, ["block_time", "created_at", "launch_time"]);
+  if (start) {
+    const days = (Date.now() - new Date(start).getTime()) / 86400000;
+    if (days <= 7) return "NEW";
+  }
+
+  return "";
+}
