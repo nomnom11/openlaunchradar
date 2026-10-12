@@ -107,7 +107,7 @@ export default function Home() {
       const id = `${row.chain}:${tokenAddress(row)}`;
       const matchesChain = chain === "all" || String(row.chain).toLowerCase().includes(chain);
       const query = `${tokenName(row)} ${tokenSymbol(row)} ${tokenAddress(row)}`.toLowerCase();
-      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || (trendScore(row) ?? 0) >= 70);
+      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || badgeType(row) === "HOT");
     });
     filtered.sort((a, b) => {
       if (sort === "volume") return (radarVolume(b) ?? -1) - (radarVolume(a) ?? -1);
