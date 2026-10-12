@@ -1,0 +1,150 @@
+ "use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { buys, chainName, compact, firstValue, marketCap, money, percent, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, volume, type TokenRow } from "@/lib/tokens";
+
+type ApiResponse = { tokens: TokenRow[]; errors?: string[]; source?: string; fetchedAt?: string };
+
+export default function Home() {
+  const [data, setData] = useState<ApiResponse>({ tokens: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [chain, setChain] = useState("all");
+  const [sort, setSort] = useState("score");
+  const [search, setSearch] = useState("");
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [watchOnly, setWatchOnly] = useState(false);
+  const [alerts, setAlerts] = useState<string[]>([]);
+  const lastValuesRef = useRef<Record<string, number>>({});
+  const [updatedAt, setUpdatedAt] = useState("");
+
+  useEffect(() => {
+    try { setWatchlist(JSON.parse(localStorage.getItem("openlaunch-radar-watchlist") || "[]")); } catch {}
+  }, []);
+  useEffect(() => { localStorage.setItem("openlaunch-radar-watchlist", JSON.stringify(watchlist)); }, [watchlist]);
+
+  const load = useCallback(async () => {
+    try {
+      const response = await fetch("/api/tokens", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok && !result.tokens?.length) throw new Error((result.errors || ["Gagal mengambil data OpenLaunch."]).join(" · "));
+      const rows: TokenRow[] = result.tokens || [];
+      const newAlerts: string[] = [];
+      const nextValues: Record<string, number> = {};
+      rows.forEach((row) => {
+        const id = `${row.chain}:${tokenAddress(row)}`;
+        const v = volume(row);
+        if (v !== null) {
+          nextValues[id] = v;
+          const old = lastValuesRef.current[id];
+          if (old && v >= old * 1.5 && v - old > 100) newAlerts.push(`${tokenSymbol(row)}: volume yang dilaporkan naik ≥50% dibanding pengambilan sebelumnya.`);
+        }
+      });
+      if (newAlerts.length) setAlerts((old) => [...newAlerts, ...old].slice(0, 8));
+      lastValuesRef.current = nextValues;
+      setData(result);
+      setError("");
+      setUpdatedAt(new Date().toLocaleTimeString());
+    } catch (e: any) {
+      setError(e?.message || "Tidak dapat mengambil data.");
+    } finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); const timer = setInterval(load, 30000); return () => clearInterval(timer); }, [load]);
+
+  const rows = useMemo(() => {
+    let filtered = data.tokens.filter((row) => {
+      const id = `${row.chain}:${tokenAddress(row)}`;
+      const matchesChain = chain === "all" || String(row.chain).toLowerCase().includes(chain);
+      const query = `${tokenName(row)} ${tokenSymbol(row)} ${tokenAddress(row)}`.toLowerCase();
+      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id));
+    });
+    filtered.sort((a, b) => {
+      if (sort === "volume") return (volume(b) ?? -1) - (volume(a) ?? -1);
+      if (sort === "mcap") return (marketCap(b) ?? -1) - (marketCap(a) ?? -1);
+      if (sort === "trades") return (tradeCount(b) ?? -1) - (tradeCount(a) ?? -1);
+      return trendScore(b) - trendScore(a);
+    });
+    return filtered;
+  }, [data, chain, search, watchOnly, watchlist, sort]);
+
+  const totalVolume = data.tokens.reduce((sum, row) => sum + (volume(row) ?? 0), 0);
+  const toggleWatch = (id: string) => setWatchlist((old) => old.includes(id) ? old.filter((x) => x !== id) : [...old, id]);
+
+  return <main className="shell">
+    <header className="topbar">
+      
+<a className="brand" href="#">
+  <img className="brand-logo" src="/logo.png" alt="Openlaunch Radar logo" />
+  <span>OPENLAUNCH <b>RADAR</b><small>ON-CHAIN TREND MONITOR</small></span>
+</a>
+
+      <div className="top-right"><span className="live-dot" /> <span>PUBLIC API</span><button className="refresh" onClick={load}>↻ Refresh</button></div>
+    </header>
+
+    <section className="hero">
+      <div>
+        <p className="eyebrow">MARKET INTELLIGENCE / MULTI-CHAIN</p>
+        <h1>Find momentum <span>before the crowd.</span></h1>
+        <p className="hero-copy">Track tokens across Base, Robinhood Chain, and Arc using public data. The trend score is a transparent heuristic, not a price prediction.</p>
+        <div className="hero-status"><span className="pulse" /> LIVE MONITORING <small>Auto-refresh 30 detik</small></div>
+      </div>
+    </section>
+
+    <section className="stats">
+      <div className="stat"><span>TRACKED TOKENS</span><strong>{data.tokens.length}</strong><small>Gabungan 3 jaringan</small></div>
+      <div className="stat"><span>VOLUME USD · RETURNED DATA</span><strong>{money(totalVolume)}</strong><small>Jumlah field volume yang tersedia</small></div>
+      <div className="stat"><span>WATCHLIST</span><strong>{watchlist.length.toString().padStart(2, "0")}</strong><small>Disimpan di browser ini</small></div>
+      <div className="stat"><span>LAST UPDATED</span><strong className="time-stat">{updatedAt || "—"}</strong><small>{loading ? "Mengambil data..." : "Status refresh"}</small></div>
+    </section>
+
+    <section className="section-head"><div><p className="eyebrow">RADAR SCANNER</p><h2>Token explorer <span className="count">{rows.length} hasil</span></h2></div><button className={`watch-filter ${watchOnly ? "selected" : ""}`} onClick={() => setWatchOnly(!watchOnly)}>☆ {watchOnly ? "Watchlist aktif" : "Watchlist"}</button></section>
+    <section className="filters">
+      <label className="searchbox">⌕ <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama, ticker, atau alamat..." /></label>
+      <select value={chain} onChange={(e) => setChain(e.target.value)} aria-label="Pilih jaringan"><option value="all">Semua jaringan</option><option value="base">Base</option><option value="robinhood">Robinhood Chain</option><option value="arc">Arc</option></select>
+      <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Urutkan token"><option value="score">Trend Score</option><option value="volume">Volume</option><option value="mcap">Market cap / FDV</option><option value="trades">Jumlah transaksi</option></select>
+    </section>
+
+    {error && <div className="notice error"><b>Data API belum berhasil dimuat.</b><p>{error}</p><small>Periksa koneksi internet, lalu tekan Refresh. OpenLaunch API merupakan sumber data eksternal.</small></div>}
+    {data.errors?.length > 0 && <div className="notice warning"><b>Beberapa jaringan tidak berhasil diambil.</b><p>{data.errors.join(" · ")}</p></div>}
+
+    <section className="table-wrap">
+      <div className="table-scroll"><table>
+        <thead><tr><th># / TOKEN</th><th>CHAIN</th><th>PRICE USD</th><th>VOLUME</th><th>BUYS / SELLS</th><th>TRADES</th><th>MARKET CAP / FDV</th><th>TREND SCORE</th><th></th></tr></thead>
+        <tbody>
+          {rows.map((row, index) => {
+            const id = `${row.chain}:${tokenAddress(row)}`;
+            const b = buys(row), s = sells(row);
+            const ch = chainName(row.chain);
+            const address = tokenAddress(row);
+            return <tr key={id}>
+              <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><div><strong>{tokenName(row)}</strong><small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
+              <td><span className={`chain-badge ${ch.toLowerCase()}`}>{ch}</span></td>
+              <td className="numeric">{money(price(row))}</td>
+              <td className="numeric">{money(volume(row))}</td>
+              <td><span className="buy">{b === null ? "—" : compact(b)}</span><span className="muted"> / </span><span className="sell">{s === null ? "—" : compact(s)}</span></td>
+              <td className="numeric">{compact(tradeCount(row))}</td>
+              <td className="numeric">{money(marketCap(row))}</td>
+              <td><div className="score-cell"><strong>{trendScore(row)}</strong><span className="score-track"><i style={{ width: `${trendScore(row)}%` }} /></span></div></td>
+              <td><button className={`star ${watchlist.includes(id) ? "on" : ""}`} title="Tambah/hapus watchlist" onClick={() => toggleWatch(id)}>{watchlist.includes(id) ? "★" : "☆"}</button></td>
+            </tr>;
+          })}
+          {!rows.length && <tr><td colSpan={9} className="empty">{loading ? "Mengambil data token dari OpenLaunch..." : "Tidak ada token yang cocok dengan filter. Jika API gagal, periksa pesan di atas."}</td></tr>}
+        </tbody>
+      </table></div>
+      <footer className="table-footer"><span>Source: <a href="https://openlaunch.lol/agents" target="_blank" rel="noreferrer">OpenLaunch public JSON API ↗</a></span><span>Last refresh: {updatedAt || "belum tersedia"}</span></footer>
+    </section>
+
+    <section className="bottom-grid">
+      <div className="panel"><div className="panel-head"><div><p className="eyebrow">RADAR AGENT</p><h3>Activity alerts</h3></div><span className="counter">{alerts.length}</span></div><p className="panel-copy">Peringatan lokal dibuat ketika field volume yang dikembalikan API naik ≥50% dan selisihnya lebih dari $100 antar-pengambilan. Ini bukan histori volume per jam dari provider.</p>
+        {alerts.length ? <ul className="alerts">{alerts.map((a, i) => <li key={`${a}-${i}`}><span className="alert-icon">↗</span>{a}</li>)}</ul> : <div className="empty-small">Belum ada lonjakan yang terdeteksi pada sesi ini.<small>Alert baru aktif setelah ada setidaknya dua pengambilan data.</small></div>}
+        <button className="text-button" onClick={() => setAlerts([])}>Bersihkan alert</button>
+      </div>
+      <div className="panel"><div className="panel-head"><div><p className="eyebrow">SCORING MODEL</p><h3>Cara Trend Score dihitung</h3></div><span className="model-tag">v0.1</span></div>
+        <div className="formula"><div><span>Volume USD</span><b>Log scale · 12 pts</b></div><div><span>Trader / holder data</span><b>Log scale · 12 pts</b></div><div><span>Jumlah transaksi</span><b>Log scale · 10 pts</b></div><div><span>Momentum harga (jika ada)</span><b>Bonus / penalti ±15</b></div></div>
+        <p className="disclaimer">Skor dibatasi 0–100. Field yang tidak tersedia tidak dianggap sebagai data aktual; skor ini hanya indikator aktivitas, bukan rekomendasi membeli token.</p>
+      </div>
+    </section>
+    <footer className="page-footer"><span>OPENLAUNCH RADAR <b>·</b> EARLY ACCESS</span><span>Data disediakan oleh OpenLaunch. Bukan nasihat keuangan.</span></footer>
+  </main>;
+}

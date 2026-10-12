@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+.env*
+!.env.example
+.DS_Store
+
+*.tsbuildinfo
+check.json
+response.json
+response-page2.json
