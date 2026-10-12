@@ -9,3 +9,7 @@ out
 check.json
 response.json
 response-page2.json
+
+*.bak
+*.backup
+*.before-column-order
