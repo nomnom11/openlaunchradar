@@ -219,7 +219,7 @@ export default function Home() {
     </section>
     <footer className="page-footer"><span>OPENLAUNCH RADAR <b>·</b> EARLY ACCESS</span><span>Data provided by OpenLaunch. Not financial advice.</span></footer>
     </div>
-    <section id="about" className="about-section">
+    <section className="panel about-section" id="about">
       <h2>About OpenLaunch Radar</h2>
       <p>OpenLaunch Radar is an on-chain market intelligence terminal designed to monitor early token activity, trading pressure, volume movement, and market signals across multiple chains.</p>
       <h3>How It Works</h3>
