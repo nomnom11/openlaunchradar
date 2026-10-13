@@ -182,7 +182,11 @@ export function badgeType(row: TokenRow): string {
   const volume = radarVolume(row) ?? 0;
   const badges: string[] = [];
 
-  if (volume >= 1000000) badges.push("WHALE");
+  const buys = numeric(row, ["buys", "buy_count", "buys_24h", "buyCount"]) ?? 0;
+  const sells = numeric(row, ["sells", "sell_count", "sells_24h", "sellCount"]) ?? 0;
+  const buyPressure = (buys + sells) > 0 ? buys / (buys + sells) : 0;
+
+  if (volume >= 1000000 && buyPressure >= 0.55) badges.push("WHALE");
 
   if (score >= 75) {
     badges.push("HOT");
