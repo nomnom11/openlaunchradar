@@ -163,3 +163,19 @@ input:focus,select:focus,button:focus-visible{outline:2px solid rgba(198,255,77,
   letter-spacing:.7px;
   vertical-align:middle;
 }
+
+.ranking-reasons{
+  margin-top:5px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+}
+
+.ranking-reasons span{
+  font-size:10px;
+  color:#94a3b8;
+  background:#111827;
+  padding:2px 5px;
+  border-radius:4px;
+}
+

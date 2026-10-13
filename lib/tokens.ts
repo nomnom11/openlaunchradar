@@ -394,3 +394,119 @@ export function riskSignal(row: TokenRow): string {
 
   return "";
 }
+
+export function momentum24h(row: TokenRow): number {
+  const volume24 = numeric(row, [
+    "volume_24h_usd",
+    "volume24h_usd",
+    "volume_24h",
+    "volume_usd_24h"
+  ]) ?? 0;
+
+  const trades24 = numeric(row, [
+    "trades_24h",
+    "trade_count",
+    "transactions"
+  ]) ?? 0;
+
+  const buys24 = numeric(row, [
+    "buys_24h",
+    "buys",
+    "buy_count"
+  ]) ?? 0;
+
+  const sells24 = numeric(row, [
+    "sells_24h",
+    "sells",
+    "sell_count"
+  ]) ?? 0;
+
+
+  const activity =
+    Math.min(
+      40,
+      (Math.log10(1 + trades24) / Math.log10(10000)) * 40
+    );
+
+
+  const volume =
+    Math.min(
+      40,
+      (Math.log10(1 + volume24) / Math.log10(1000000)) * 40
+    );
+
+
+  const total = buys24 + sells24;
+
+  const pressure =
+    total > 0
+      ? (buys24 / total) * 20
+      : 0;
+
+
+  return Math.round(
+    activity +
+    volume +
+    pressure
+  );
+}
+
+export function rankingReasons(row: TokenRow): string[] {
+  const reasons: string[] = [];
+
+  const volume = radarVolume(row) ?? 0;
+
+  const buys = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount"
+  ]) ?? 0;
+
+  const sells = numeric(row, [
+    "sells",
+    "sell_count",
+    "sells_24h",
+    "sellCount"
+  ]) ?? 0;
+
+  const holdersCount = numeric(row, [
+    "holders"
+  ]) ?? 0;
+
+  const total = buys + sells;
+
+  const buyPressure =
+    total > 0 ? buys / total : 0;
+
+
+  if (volume >= 100000) {
+    reasons.push("Strong 24h volume");
+  }
+
+  if (buyPressure >= 0.55) {
+    reasons.push("Positive buy pressure");
+  }
+
+  if (buys >= 1000) {
+    reasons.push("High buyer activity");
+  }
+
+  if (holdersCount >= 100) {
+    reasons.push("Healthy holder base");
+  }
+
+  if (volume >= 1000000) {
+    reasons.push("Whale level liquidity");
+  }
+
+  if (buyPressure < 0.45 && total > 0) {
+    reasons.push("Selling pressure detected");
+  }
+
+  if (!reasons.length) {
+    reasons.push("Low activity - monitoring");
+  }
+
+  return reasons.slice(0, 4);
+}
