@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buys, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, badgeType, radarVolume, volume24h, tokenImage, type TokenRow } from "@/lib/tokens";
+import { buys, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, badgeType, radarVolume, volume24h, tokenImage, holders, age, type TokenRow } from "@/lib/tokens";
 
 function isHotToken(row: TokenRow): boolean {
   const volume = radarVolume(row) ?? 0;
@@ -189,7 +189,7 @@ export default function Home() {
 
     <section className="table-wrap" id="radar">
       <div className="table-scroll"><table>
-        <thead><tr><th># / TOKEN</th><th>CHAIN</th><th>PRICE USD</th><th>VOLUME</th><th>VOLUME 24H</th><th>BUYS / SELLS</th><th>TRADES</th><th>MARKET CAP / FDV</th><th>TREND SCORE</th><th></th></tr></thead>
+          <thead><tr><th># / TOKEN</th><th>CHAIN</th><th>PRICE USD</th><th>VOLUME</th><th>VOLUME 24H</th><th>BUYS / SELLS</th><th>TRADES</th><th>MARKET CAP / FDV</th><th>TREND SCORE</th><th>AGE</th><th>HOLDERS</th><th></th></tr></thead>
         <tbody>
           {rows.map((row, index) => {
             const id = `${row.chain}:${tokenAddress(row)}`;
@@ -206,6 +206,8 @@ export default function Home() {
               <td className="numeric">{compact(tradeCount(row))}</td>
               <td className="numeric">{money(marketCap(row))}</td>
               <td><div className="score-cell"><strong>{trendScore(row) ?? "—"}</strong><span className="score-track"><i style={{ width: `${trendScore(row) ?? 0}%` }} /></span></div></td>
+                <td className="numeric">{age(row) || "—"}</td>
+                <td className="numeric">{holders(row) ? compact(holders(row)) : "—"}</td>
               <td><button className={`star ${watchlist.includes(id) ? "on" : ""}`} title="Add/remove from watchlist" onClick={() => toggleWatch(id)}>{watchlist.includes(id) ? "★" : "☆"}</button></td>
             </tr>;
           })}

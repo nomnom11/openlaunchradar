@@ -274,6 +274,7 @@ export function hotScore(row: TokenRow): number {
     "holders"
   ]) ?? 0;
 
+  const tokenAge = age(row);
 
   const totalTrades = buys + sells;
 
@@ -313,6 +314,16 @@ export function hotScore(row: TokenRow): number {
       (Math.log10(1 + holdersCount) / Math.log10(1000)) * 10
     );
 
+    // Age confidence 10%
+    let ageScore = 0;
+
+    if (tokenAge) {
+      if (tokenAge.includes("mo")) ageScore = 10;
+      else if (tokenAge.includes("d")) ageScore = 8;
+      else if (tokenAge.includes("h")) ageScore = 5;
+    }
+
+
 
   // Sell pressure penalty -10%
   let sellPenalty = 0;
@@ -334,7 +345,8 @@ export function hotScore(row: TokenRow): number {
       volumeScore +
       pressureScore +
       activityScore +
-      holderScore -
+        holderScore +
+        ageScore -
       sellPenalty
     )
   );
