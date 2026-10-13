@@ -223,21 +223,6 @@ export function activityScore(row: TokenRow): number {
   return Math.round(score);
 }
 
-export function hotScore(row: TokenRow): number {
-  const volume = numeric(row, [
-    "volume_usd",
-    "volume_24h_usd",
-    "volume24h_usd",
-    "volume_24h",
-  ]) ?? 0;
-
-  const volumeScore = Math.min(
-    50,
-    (Math.log10(1 + volume) / Math.log10(1000000)) * 50
-  );
-
-  return Math.round(volumeScore + (activityScore(row) * 0.5));
-}
 
 export function badgeType(row: TokenRow): string {
   const score = hotScore(row);
@@ -254,4 +239,47 @@ export function badgeType(row: TokenRow): string {
   }
 
   return "";
+}
+export function hotScore(row: TokenRow): number {
+  const volume = numeric(row, [
+    "volume_usd",
+    "volume_24h_usd",
+    "volume24h_usd",
+    "volume_24h",
+  ]) ?? 0;
+
+  const buys = numeric(row, ["buys", "buy_count", "buys_24h", "buyCount"]) ?? 0;
+  const sells = numeric(row, ["sells", "sell_count", "sells_24h", "sellCount"]) ?? 0;
+  const trades = numeric(row, ["trades_24h", "trade_count", "trades", "tx_count", "transactions"]) ?? 0;
+  const holdersCount = numeric(row, ["holders"]) ?? 0;
+
+  const volumeScore = Math.min(
+    35,
+    (Math.log10(1 + volume) / Math.log10(10000000)) * 35
+  );
+
+  const totalTrades = buys + sells;
+  const buyPressure = totalTrades > 0 ? buys / totalTrades : 0.5;
+
+  const pressureScore = Math.max(
+    0,
+    Math.min(35, buyPressure * 35)
+  );
+
+  const activityScore = Math.min(
+    20,
+    (Math.log10(1 + trades) / Math.log10(10000)) * 20
+  );
+
+  const holderScore = Math.min(
+    10,
+    (Math.log10(1 + holdersCount) / Math.log10(1000)) * 10
+  );
+
+  return Math.round(
+    volumeScore +
+    pressureScore +
+    activityScore +
+    holderScore
+  );
 }
