@@ -672,3 +672,78 @@ export function spikeLabel(
   return "";
 }
 
+
+export function buyAccelerationScore(
+  row: TokenRow,
+  previousBuys: number = 0
+): number {
+
+  const buys = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount"
+  ]) ?? 0;
+
+
+  if (!previousBuys || previousBuys <= 0) {
+    return 0;
+  }
+
+
+  const growth =
+    ((buys - previousBuys) / previousBuys) * 100;
+
+
+  if (growth >= 300) return 100;
+  if (growth >= 200) return 80;
+  if (growth >= 100) return 60;
+  if (growth >= 50) return 40;
+
+
+  return 0;
+}
+
+
+export function flowSignal(row: TokenRow): string {
+
+  const buys = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount"
+  ]) ?? 0;
+
+
+  const sells = numeric(row, [
+    "sells",
+    "sell_count",
+    "sells_24h",
+    "sellCount"
+  ]) ?? 0;
+
+
+  const total = buys + sells;
+
+
+  if (total === 0) {
+    return "";
+  }
+
+
+  const pressure = buys / total;
+
+
+  if (pressure >= 0.7) {
+    return "BUY FLOW";
+  }
+
+
+  if (pressure <= 0.35) {
+    return "SELL FLOW";
+  }
+
+
+  return "";
+}
+
