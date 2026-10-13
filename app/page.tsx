@@ -199,7 +199,7 @@ export default function Home() {
 
 
     <section className="panel history-panel" id="history">
-      <div className="panel-head"><div><p className="eyebrow">MARKET ACTIVITY</p><h3>Volume Momentum Timeline</h3></div><span className="model-tag">RADAR MODEL</span></div>
+      <div className="panel-head"><div><p className="eyebrow">MARKET ACTIVITY</p><h3>Volume Momentum Timeline</h3></div><span className="model-tag">SYSTEM MODEL</span></div>
       <p className="panel-copy">Local volume snapshots collected during radar monitoring sessions.</p>
       <select value={activeHistoryId} onChange={(e) => setSelectedHistoryToken(e.target.value)} disabled={!historyTokenIds.length}>
         {historyTokenIds.map((id) => { const row = data.tokens.find((item) => `${item.chain}:${tokenAddress(item)}` === id); return <option key={id} value={id}>{row ? `${tokenName(row)} (${tokenSymbol(row)})` : id}</option>; })}
@@ -212,12 +212,12 @@ export default function Home() {
         {alerts.length ? <ul className="alerts">{alerts.map((a, i) => <li key={`${a}-${i}`}><span className="alert-icon">↗</span>{a}</li>)}</ul> : <div className="empty-small">No spikes detected in this session yet.<small>Alerts become active after at least two data fetches.</small></div>}
         <button className="text-button" onClick={() => setAlerts([])}>Clear alerts</button>
       </div>
-      <div className="panel" id="scoring"><div className="panel-head"><div><p className="eyebrow">SCORING MODEL</p><h3>How Trend Score Is Calculated</h3></div><span className="model-tag">v0.1</span></div>
+      <div className="panel" id="scoring"><div className="panel-head"><div><p className="eyebrow">SCORING MODEL</p><h3>How Trend Score Is Calculated</h3></div><span className="model-tag">ACTIVE</span></div>
         <div className="formula"><div><span>Volume 24h USD</span><b>Log scale · 40 pts · ref $1,000</b></div><div><span>Traders in 24h</span><b>Log scale · 30 pts · ref 10</b></div><div><span>Transactions in 24h</span><b>Log scale · 30 pts · ref 10</b></div></div>
         <p className="disclaimer">Scores range from 0–100. Missing fields are not treated as actual data; this score is an activity indicator, not a token-buying recommendation.</p>
       </div>
     </section>
-    <footer className="page-footer"><span>OPENLAUNCH RADAR <b>·</b> EARLY ACCESS</span><span>Data provided by OpenLaunch. Not financial advice.</span></footer>
+    <footer className="page-footer"><span>OPENLAUNCH RADAR <b>·</b> MARKET INTELLIGENCE TERMINAL</span><span>Data provided by OpenLaunch. Not financial advice.</span></footer>
     </div>
     <section className="panel about-section" id="about">
       <h2>About OpenLaunch Radar</h2>
