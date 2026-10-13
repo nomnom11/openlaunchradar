@@ -142,41 +142,6 @@ export function activityScore(row: TokenRow): number {
 }
 
 
-export function hotScore(row: TokenRow): number {
-  const volume = radarVolume(row) ?? 0;
-
-  const buys = numeric(row, ["buys", "buy_count", "buys_24h", "buyCount"]) ?? 0;
-  const sells = numeric(row, ["sells", "sell_count", "sells_24h", "sellCount"]) ?? 0;
-  const trades = numeric(row, ["trades_24h", "trade_count", "trades", "tx_count", "transactions"]) ?? 0;
-  const holdersCount = numeric(row, ["holders"]) ?? 0;
-
-  const volumeScore = Math.min(
-    35,
-    (Math.log10(1 + volume) / Math.log10(10000000)) * 35
-  );
-
-  const totalTrades = buys + sells;
-  const buyPressure = totalTrades > 0 ? buys / totalTrades : 0.5;
-
-  const pressureScore = Math.min(35, buyPressure * 35);
-
-  const activityScore = Math.min(
-    20,
-    (Math.log10(1 + trades + buys + sells) / Math.log10(10000)) * 20
-  );
-
-  const holderScore = Math.min(
-    10,
-    (Math.log10(1 + holdersCount) / Math.log10(1000)) * 10
-  );
-
-  return Math.round(
-    volumeScore +
-    pressureScore +
-    activityScore +
-    holderScore
-  );
-}
 export function badgeType(row: TokenRow): string {
   const score = hotScore(row);
   const volume = radarVolume(row) ?? 0;
@@ -208,4 +173,53 @@ export function badgeType(row: TokenRow): string {
   }
 
   return badges.join(" ");
+}
+export function hotScore(row: TokenRow): number {
+  const volume = radarVolume(row) ?? 0;
+
+  const buys = numeric(row, ["buys", "buy_count", "buys_24h", "buyCount"]) ?? 0;
+  const sells = numeric(row, ["sells", "sell_count", "sells_24h", "sellCount"]) ?? 0;
+  const trades = numeric(row, ["trades_24h", "trade_count", "trades", "tx_count", "transactions"]) ?? 0;
+  const holdersCount = numeric(row, ["holders"]) ?? 0;
+
+  const volumeScore = Math.min(
+    45,
+    (Math.log10(1 + volume) / Math.log10(10000000)) * 45
+  );
+
+  const totalTrades = buys + sells;
+  const buyPressure = totalTrades > 0 ? buys / totalTrades : 0.5;
+
+  const pressureScore = Math.max(
+    0,
+    Math.min(30, buyPressure * 30)
+  );
+
+  const activityScore = Math.min(
+    15,
+    (Math.log10(1 + trades) / Math.log10(10000)) * 15
+  );
+
+  const holderScore = Math.min(
+    10,
+    (Math.log10(1 + holdersCount) / Math.log10(1000)) * 10
+  );
+
+  const sellPenalty = buyPressure < 0.45
+    ? -15
+    : 0;
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        volumeScore +
+        pressureScore +
+        activityScore +
+        holderScore +
+        sellPenalty
+      )
+    )
+  );
 }
