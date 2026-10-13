@@ -128,7 +128,7 @@ export default function Home() {
   const toggleWatch = (id: string) => setWatchlist((old) => old.includes(id) ? old.filter((x) => x !== id) : [...old, id]);
 
   return <main className="shell">
-    <aside className="premium-sidebar"><a className="side-brand" href="#"><Image src="/logo.png" alt="OpenLaunch" width={34} height={34} priority/><span>OPENLAUNCH<small>RADAR TERMINAL</small></span></a><p className="side-label">WORKSPACE</p><a className="side-link active" href="#radar">◈ <span>Live Radar</span></a><a className="side-link" href="#watchlist">☆ <span>Watchlist</span></a><a className="side-link" href="#history">⌁ <span>Volume History</span></a><p className="side-label">ANALYTICS</p><a className="side-link" href="#alerts">↗ <span>Activity Alerts</span></a><a className="side-link" href="#scoring">◎ <span>Scoring Model</span></a><div className="sidebar-bottom"><span className="live-dot"/> API MONITOR<small>Refreshes every 30 seconds</small></div></aside>
+    <aside className="premium-sidebar"><a className="side-brand" href="#"><Image src="/logo.png" alt="OpenLaunch" width={34} height={34} priority/><span>OPENLAUNCH<small>RADAR TERMINAL</small></span></a><p className="side-label">WORKSPACE</p><a className="side-link active" href="#radar">◈ <span>Live Radar</span></a><a className="side-link" href="#watchlist">☆ <span>Watchlist</span></a><a className="side-link" href="#history">⌁ <span>Volume History</span></a><p className="side-label">ANALYTICS</p><a className="side-link" href="#alerts">↗ <span>Activity Alerts</span></a><a className="side-link" href="#scoring">◎ <span>Scoring Model</span></a><a className="side-link" href="#about">ⓘ <span>About</span></a><div className="sidebar-bottom"><span className="live-dot"/> API MONITOR<small>Refreshes every 30 seconds</small></div></aside>
     <div className="dashboard-main">
     <header className="topbar">
       
@@ -219,5 +219,18 @@ export default function Home() {
     </section>
     <footer className="page-footer"><span>OPENLAUNCH RADAR <b>·</b> EARLY ACCESS</span><span>Data provided by OpenLaunch. Not financial advice.</span></footer>
     </div>
+    <section id="about" className="about-section">
+      <h2>About OpenLaunch Radar</h2>
+      <p>OpenLaunch Radar is an on-chain market intelligence terminal designed to monitor early token activity, trading pressure, volume movement, and market signals across multiple chains.</p>
+      <h3>How It Works</h3>
+      <p>The radar analyzes market activity using volume, buyer activity, holder data, trading flow, and confidence signals.</p>
+      <ul>
+        <li>Confidence Score — measures the strength of current activity.</li>
+        <li>Flow Signal — shows buying and selling pressure.</li>
+        <li>Ranking Reasons — explains why a token appears in the radar.</li>
+      </ul>
+      <h3>Disclaimer</h3>
+      <p>OpenLaunch Radar provides market analysis and activity signals. It does not provide financial advice or guarantee future token performance.</p>
+    </section>
   </main>;
 }
