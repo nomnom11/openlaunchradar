@@ -246,6 +246,7 @@ export function badgeType(row: TokenRow): string {
 
 export function hotScore(row: TokenRow): number {
   const volume = radarVolume(row) ?? 0;
+  const volume24 = volume24h(row) ?? 0;
 
   const buys = numeric(row, [
     "buys",
@@ -320,6 +321,10 @@ export function hotScore(row: TokenRow): number {
     sellPenalty = 10;
   } else if (buyPressure < 0.60) {
     sellPenalty = 5;
+  }
+
+  if (volume24 <= 0 && trades <= 0) {
+    return 0;
   }
 
 
