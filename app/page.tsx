@@ -107,7 +107,7 @@ export default function Home() {
       const id = `${row.chain}:${tokenAddress(row)}`;
       const matchesChain = chain === "all" || String(row.chain).toLowerCase().includes(chain);
       const query = `${tokenName(row)} ${tokenSymbol(row)} ${tokenAddress(row)}`.toLowerCase();
-      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || badgeType(row) === "HOT");
+      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || badgeType(row).includes("HOT"));
     });
     filtered.sort((a, b) => {
       if (sort === "volume") { const priority = (row: TokenRow) => { const badge = badgeType(row); return (badge === "WHALE" ? 4 : badge === "HOT" ? 3 : badge === "ACTIVE" ? 2 : badge === "NEW" ? 1 : 0) * 1000000 + (hotScore(row) ?? 0) * 1000 + (radarVolume(row) ?? 0); }; return priority(b) - priority(a); }
@@ -177,7 +177,7 @@ export default function Home() {
             const ch = chainName(row.chain);
             const address = tokenAddress(row);
             return <tr key={id}>
-              <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{badgeType(row) === "HOT" && <span className="hot-badge">HOT</span>}{badgeType(row) === "WHALE" && <span className="hot-badge">WHALE</span>}{badgeType(row) === "ACTIVE" && <span className="hot-badge">ACTIVE</span>}{badgeType(row) === "NEW" && <span className="new-badge">NEW</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
+              <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{badgeType(row).includes("HOT") && <span className="hot-badge">HOT</span>}{badgeType(row) === "WHALE" && <span className="hot-badge">WHALE</span>}{badgeType(row) === "ACTIVE" && <span className="hot-badge">ACTIVE</span>}{badgeType(row) === "NEW" && <span className="new-badge">NEW</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
               <td><span className={`chain-badge ${ch.toLowerCase()}`}>{ch}</span></td>
               <td className="numeric">{money(price(row))}</td>
               <td className="numeric">{money(marketCap(row))}</td>
