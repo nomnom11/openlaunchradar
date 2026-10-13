@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, hotScore, badgeType, riskSignal, volumeAll, radarVolume, volume24h, momentum24h, qualityScore, rankingReasons, confidenceScore, tokenImage, type TokenRow } from "@/lib/tokens";
+import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, hotScore, badgeType, riskSignal, volumeAll, radarVolume, volume24h, momentum24h, qualityScore, rankingReasons, confidenceScore, flowSignal, buyAccelerationScore, tokenImage, type TokenRow } from "@/lib/tokens";
 
 type ApiResponse = { tokens: TokenRow[]; errors?: string[]; source?: string; fetchedAt?: string };
 type HistoryPoint = { time: string; timestamp: number; volume: number };
