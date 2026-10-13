@@ -175,52 +175,6 @@ export function badgeType(row: TokenRow): string {
   return badges.join(" ");
 }
 
-export function riskSignal(row: TokenRow): string {
-  const volume = radarVolume(row) ?? 0;
-
-  const buys = numeric(row, [
-    "buys",
-    "buy_count",
-    "buys_24h",
-    "buyCount"
-  ]) ?? 0;
-
-  const sells = numeric(row, [
-    "sells",
-    "sell_count",
-    "sells_24h",
-    "sellCount"
-  ]) ?? 0;
-
-  const holdersCount = numeric(row, ["holders"]) ?? 0;
-
-  const total = buys + sells;
-  const buyPressure = total > 0 ? buys / total : 0;
-
-  if (
-    buyPressure < 0.4 &&
-    volume >= 100000
-  ) {
-    return "RISK";
-  }
-
-  if (
-    volume >= 500000 &&
-    buyPressure < 0.55
-  ) {
-    return "WATCH";
-  }
-
-  if (
-    volume >= 100000 &&
-    buyPressure >= 0.55 &&
-    holdersCount > 50
-  ) {
-    return "HEALTHY";
-  }
-
-  return "";
-}
 export function hotScore(row: TokenRow): number {
   const volume = radarVolume(row) ?? 0;
 
@@ -310,4 +264,64 @@ export function hotScore(row: TokenRow): number {
       sellPenalty
     )
   );
+}
+export function riskSignal(row: TokenRow): string {
+  const volume = radarVolume(row) ?? 0;
+
+  const buys = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount"
+  ]) ?? 0;
+
+  const sells = numeric(row, [
+    "sells",
+    "sell_count",
+    "sells_24h",
+    "sellCount"
+  ]) ?? 0;
+
+  const holdersCount = numeric(row, [
+    "holders"
+  ]) ?? 0;
+
+
+  const total = buys + sells;
+
+  const buyPressure =
+    total > 0
+      ? buys / total
+      : 0;
+
+
+  // Strong accumulation
+  if (
+    volume >= 100000 &&
+    buyPressure >= 0.65 &&
+    holdersCount >= 100
+  ) {
+    return "HEALTHY";
+  }
+
+
+  // Normal active market
+  if (
+    volume >= 100000 &&
+    buyPressure >= 0.50
+  ) {
+    return "BALANCED";
+  }
+
+
+  // Selling pressure
+  if (
+    volume >= 100000 &&
+    buyPressure < 0.50
+  ) {
+    return "RISK";
+  }
+
+
+  return "";
 }
