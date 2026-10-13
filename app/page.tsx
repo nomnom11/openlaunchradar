@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, hotScore, badgeType, riskSignal, volumeAll, radarVolume, volume24h, tokenImage, type TokenRow } from "@/lib/tokens";
+import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, hotScore, badgeType, riskSignal, volumeAll, radarVolume, volume24h, momentum24h, tokenImage, type TokenRow } from "@/lib/tokens";
 
 type ApiResponse = { tokens: TokenRow[]; errors?: string[]; source?: string; fetchedAt?: string };
 type HistoryPoint = { time: string; timestamp: number; volume: number };
@@ -110,7 +110,7 @@ export default function Home() {
       return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || badgeType(row).includes("HOT"));
     });
     filtered.sort((a, b) => {
-      if (sort === "volume") { const priority = (row: TokenRow) => { const badge = badgeType(row); const rank = badge.includes("WHALE") && badge.includes("HOT") ? 5 : badge.includes("HOT") ? 4 : badge.includes("WHALE") ? 3 : badge.includes("ACTIVE") ? 2 : badge.includes("NEW") ? 1 : 0; return rank * 100000000 + hotScore(row) * 100000 + (radarVolume(row) ?? 0); }; return priority(b) - priority(a); }
+      if (sort === "volume") { const priority = (row: TokenRow) => { const badge = badgeType(row); const rank = badge.includes("WHALE") && badge.includes("HOT") ? 5 : badge.includes("HOT") ? 4 : badge.includes("WHALE") ? 3 : badge.includes("ACTIVE") ? 2 : badge.includes("NEW") ? 1 : 0; const m24 = momentum24h(row); return rank * 100000000 + hotScore(row) * 100000 + m24 * 10000 + (radarVolume(row) ?? 0); }; return priority(b) - priority(a); }
       if (sort === "mcap") return (marketCap(b) ?? -1) - (marketCap(a) ?? -1);
       if (sort === "trades") return (tradeCount(b) ?? -1) - (tradeCount(a) ?? -1);
       const scoreA = trendScore(a);
