@@ -3,7 +3,16 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, badgeType, radarVolume, tokenImage, type TokenRow } from "@/lib/tokens";
+import { buys, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, badgeType, radarVolume, volume24h, tokenImage, type TokenRow } from "@/lib/tokens";
+
+function isHotToken(row: TokenRow): boolean {
+  const volume = radarVolume(row) ?? 0;
+  const volume24 = row.volume_24h_usd ?? row.volume24h_usd ?? row.volume_24h ?? row.volume_usd_24h ?? 0;
+  const activity = (buys(row) ?? 0) + (sells(row) ?? 0) + (tradeCount(row) ?? 0);
+  const score = trendScore(row) ?? 0;
+
+  return volume >= 100000 && volume24 > 0 && activity >= 1000 && score >= 50;
+}
 
 type ApiResponse = { tokens: TokenRow[]; errors?: string[]; source?: string; fetchedAt?: string };
 type HistoryPoint = { time: string; timestamp: number; volume: number };
@@ -19,6 +28,8 @@ export default function Home() {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [watchOnly, setWatchOnly] = useState(false);
   const [hotOnly, setHotOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [alerts, setAlerts] = useState<string[]>([]);
   const lastValuesRef = useRef<Record<string, number>>({});
   const [updatedAt, setUpdatedAt] = useState("");
@@ -103,21 +114,36 @@ export default function Home() {
       const id = `${row.chain}:${tokenAddress(row)}`;
       const matchesChain = chain === "all" || String(row.chain).toLowerCase().includes(chain);
       const query = `${tokenName(row)} ${tokenSymbol(row)} ${tokenAddress(row)}`.toLowerCase();
-      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || badgeType(row).includes("ACTIVE"));
+      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || isHotToken(row));
     });
-    filtered.sort((a, b) => {
-      if (sort === "volume") return (radarVolume(b) ?? -1) - (radarVolume(a) ?? -1);
+    const pageSize = 50;
+    const startIndex = (page - 1) * pageSize;
+      filtered.sort((a, b) => {
+
+      if (sort === "volume") return (volume24h(b) ?? radarVolume(b) ?? -1) - (volume24h(a) ?? radarVolume(a) ?? -1);
       if (sort === "mcap") return (marketCap(b) ?? -1) - (marketCap(a) ?? -1);
       if (sort === "trades") return (tradeCount(b) ?? -1) - (tradeCount(a) ?? -1);
-      const scoreA = trendScore(a);
-      const scoreB = trendScore(b);
-      if (scoreA === null) return scoreB === null ? 0 : 1;
-      if (scoreB === null) return -1;
-      return scoreB - scoreA;
+
+      const activityA = (volume24h(a) ?? 0) + ((buys(a) ?? 0) + (sells(a) ?? 0)) * 100;
+      const activityB = (volume24h(b) ?? 0) + ((buys(b) ?? 0) + (sells(b) ?? 0)) * 100;
+      const scoreA = trendScore(a) ?? 0;
+      const scoreB = trendScore(b) ?? 0;
+
+      return (activityB + scoreB) - (activityA + scoreA);
     });
+    filtered = filtered.slice(startIndex, startIndex + pageSize);
     return filtered;
   }, [data, chain, search, watchOnly, watchlist, sort, hotOnly]);
 
+  useEffect(() => {
+    const filteredCount = data.tokens.filter((row) => {
+      const id = `${row.chain}:${tokenAddress(row)}`;
+      const matchesChain = chain === "all" || String(row.chain).toLowerCase().includes(chain);
+      const query = `${tokenName(row)} ${tokenSymbol(row)} ${tokenAddress(row)}`.toLowerCase();
+      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || isHotToken(row));
+    }).length;
+    setTotalPages(Math.max(1, Math.ceil(filteredCount / 50)));
+  }, [data, chain, search, watchOnly, watchlist, hotOnly]);
   const totalVolume = data.tokens.reduce((sum, row) => sum + (radarVolume(row) ?? 0), 0);
   const toggleWatch = (id: string) => setWatchlist((old) => old.includes(id) ? old.filter((x) => x !== id) : [...old, id]);
 
@@ -150,11 +176,11 @@ export default function Home() {
       <div className="stat"><span>LAST UPDATED</span><strong className="time-stat">{updatedAt || "—"}</strong><small>{loading ? "Fetching data..." : "Refresh status"}</small></div>
     </section>
 
-    <section className="section-head"><div><p className="eyebrow">RADAR SCANNER</p><h2>Token explorer <span className="count">{rows.length} results</span></h2></div><div style={{display:"flex",gap:8,flexWrap:"wrap"}}><button className="watch-filter" onClick={() => { const blob = new Blob([JSON.stringify(data.tokens.filter((row) => watchlist.includes(`${row.chain}:${tokenAddress(row)}`)).map((row) => ({name: row.name ?? row.token_name ?? row.symbol ?? "Unknown token", symbol: row.symbol ?? row.token_symbol ?? "—", chain: row.chain ?? "—", address: row.token ?? row.address ?? row.token_address ?? row.tokenAddress ?? row.contract_address ?? null, price_usd: row.price_usd ?? row.priceUsd ?? row.token_price_usd ?? null, volume_24h_usd: row.volume_24h_usd ?? row.volume24h_usd ?? row.volume_24h ?? row.volume_usd_24h ?? null, market_cap_usd: row.fdv_usd ?? row.market_cap_usd ?? row.marketCapUsd ?? row.mcap_usd ?? row.fdv ?? null, trend_score: trendScore(row)})), null, 2)], {type:"application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "openlaunch-watchlist.json"; a.click(); URL.revokeObjectURL(url); }}>Export Watchlist</button><button className={`watch-filter ${watchOnly ? "selected" : ""}`} onClick={() => setWatchOnly(!watchOnly)}>☆ {watchOnly ? "Watchlist enabled" : "Watchlist"}</button></div></section>
+    <section className="section-head"><div><p className="eyebrow">RADAR SCANNER</p><h2>Token explorer <span className="count">{rows.length} results</span></h2></div><div style={{display:"flex",gap:8,flexWrap:"wrap"}}><button className="watch-filter" onClick={() => { const blob = new Blob([JSON.stringify(data.tokens.filter((row) => watchlist.includes(`${row.chain}:${tokenAddress(row)}`)).map((row) => ({name: row.name ?? row.token_name ?? row.symbol ?? "Unknown token", symbol: row.symbol ?? row.token_symbol ?? "—", chain: row.chain ?? "—", address: row.token ?? row.address ?? row.token_address ?? row.tokenAddress ?? row.contract_address ?? null, price_usd: row.price_usd ?? row.priceUsd ?? row.token_price_usd ?? null, volume_24h_usd: row.volume_24h_usd ?? row.volume24h_usd ?? row.volume_24h ?? row.volume_usd_24h ?? null, market_cap_usd: row.fdv_usd ?? row.market_cap_usd ?? row.marketCapUsd ?? row.mcap_usd ?? row.fdv ?? null, trend_score: trendScore(row)})), null, 2)], {type:"application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "openlaunch-watchlist.json"; a.click(); URL.revokeObjectURL(url); }}>Export Watchlist</button><button className={`watch-filter ${watchOnly ? "selected" : ""}`} onClick={() => { setPage(1); setWatchOnly(!watchOnly); }}>☆ {watchOnly ? "Watchlist enabled" : "Watchlist"}</button></div></section>
     <section className="filters">
-      <label className="searchbox">⌕ <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, ticker, or address..." /></label>
-      <div className="hot-filter"><button type="button" className={!hotOnly ? "active" : ""} onClick={() => setHotOnly(false)}>All Tokens</button><button type="button" className={hotOnly ? "active" : ""} onClick={() => setHotOnly(true)}>ACTIVE Only</button></div>
-      <select value={chain} onChange={(e) => setChain(e.target.value)} aria-label="Select chain"><option value="all">All chains</option><option value="base">Base</option><option value="robinhood">Robinhood Chain</option><option value="arc">Arc</option></select>
+      <label className="searchbox">⌕ <input value={search} onChange={(e) => { setPage(1); setSearch(e.target.value); }} placeholder="Search name, ticker, or address..." /></label>
+      <div className="hot-filter"><button type="button" className={!hotOnly ? "active" : ""} onClick={() => { setPage(1); setHotOnly(false); }}>All Tokens</button><button type="button" className={hotOnly ? "active" : ""} onClick={() => { setPage(1); setHotOnly(true); }}>ACTIVE Only</button></div>
+      <select value={chain} onChange={(e) => { setPage(1); setChain(e.target.value); }} aria-label="Select chain"><option value="all">All chains</option><option value="base">Base</option><option value="robinhood">Robinhood Chain</option><option value="arc">Arc</option></select>
       <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort tokens"><option value="score">Trend Score</option><option value="volume">Volume</option><option value="mcap">Market cap / FDV</option><option value="trades">Trade count</option></select>
     </section>
 
@@ -163,7 +189,7 @@ export default function Home() {
 
     <section className="table-wrap" id="radar">
       <div className="table-scroll"><table>
-        <thead><tr><th># / TOKEN</th><th>CHAIN</th><th>PRICE USD</th><th>VOLUME</th><th>BUYS / SELLS</th><th>TRADES</th><th>MARKET CAP / FDV</th><th>TREND SCORE</th><th></th></tr></thead>
+        <thead><tr><th># / TOKEN</th><th>CHAIN</th><th>PRICE USD</th><th>VOLUME</th><th>VOLUME 24H</th><th>BUYS / SELLS</th><th>TRADES</th><th>MARKET CAP / FDV</th><th>TREND SCORE</th><th></th></tr></thead>
         <tbody>
           {rows.map((row, index) => {
             const id = `${row.chain}:${tokenAddress(row)}`;
@@ -171,10 +197,11 @@ export default function Home() {
             const ch = chainName(row.chain);
             const address = tokenAddress(row);
             return <tr key={id}>
-              <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{badgeType(row).includes("ACTIVE") && <span className="active-badge">ACTIVE</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
+              <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{isHotToken(row) && <span className="hot-badge">HOT</span>}{badgeType(row).includes("HEALTHY") && <span className="healthy-badge">HEALTHY</span>}{badgeType(row).includes("WATCH") && <span className="watch-badge">WATCH</span>}{badgeType(row).includes("RISK") && <span className="risk-badge">RISK</span>}{badgeType(row).includes("WHALE") && <span className="whale-badge">WHALE</span>}{badgeType(row).includes("ACTIVE") && <span className="active-badge">ACTIVE</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
               <td><span className={`chain-badge ${ch.toLowerCase()}`}>{ch}</span></td>
               <td className="numeric">{money(price(row))}</td>
               <td className="numeric">{money(radarVolume(row))}</td>
+                <td className="numeric">{money(volume24h(row))}</td>
               <td><span className="buy">{b === null ? "—" : compact(b)}</span><span className="muted"> / </span><span className="sell">{s === null ? "—" : compact(s)}</span></td>
               <td className="numeric">{compact(tradeCount(row))}</td>
               <td className="numeric">{money(marketCap(row))}</td>
@@ -185,6 +212,11 @@ export default function Home() {
           {!rows.length && <tr><td colSpan={9} className="empty">{loading ? "Fetching token data from OpenLaunch..." : "No tokens match the current filters. If the API failed, check the message above."}</td></tr>}
         </tbody>
       </table></div>
+      <div className="table-footer" style={{justifyContent:"center",gap:"18px"}}>
+        <button className="watch-filter" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Previous</button>
+        <span>Page {page} / {totalPages || 1}</span>
+        <button className="watch-filter" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next →</button>
+      </div>
       <footer className="table-footer"><span>Source: <a href="https://openlaunch.lol/agents" target="_blank" rel="noreferrer">OpenLaunch public JSON API ↗</a></span><span>Last refresh: {updatedAt || "Not available yet"}</span></footer>
     </section>
 

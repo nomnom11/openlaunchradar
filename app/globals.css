@@ -28,7 +28,7 @@ tbody td{border-bottom:1px solid rgba(70,85,67,.22)}
 input:focus,select:focus,button:focus-visible{outline:2px solid rgba(198,255,77,.65);outline-offset:2px}
 
 /* Premium dashboard layout */
-.shell{max-width:none;width:100%;margin:0;padding:0 30px 0 258px;min-height:100vh}.premium-sidebar{position:fixed;z-index:20;inset:0 auto 0 0;width:230px;padding:28px 18px;background:rgba(10,13,11,.97);border-right:1px solid #293229;display:flex;flex-direction:column;gap:9px}.side-brand{display:flex;align-items:center;gap:11px;padding:0 4px 30px;color:var(--text);font-size:13px;font-weight:850;letter-spacing:.8px;text-decoration:none}.side-brand img{border-radius:9px}.side-brand small{display:block;margin-top:5px;color:var(--muted);font-size:9px;letter-spacing:1.4px}.side-label{margin:18px 9px 5px;color:#657060;font-size:9px;font-weight:800;letter-spacing:1.5px}.side-link{display:flex;align-items:center;gap:12px;padding:12px 13px;border:1px solid transparent;border-radius:8px;color:#9aa497;font-size:12px;text-decoration:none;transition:all .18s}.side-link:hover,.side-link.active{background:rgba(198,255,77,.08);border-color:rgba(198,255,77,.15);color:var(--green)}.sidebar-bottom{margin-top:auto;padding:15px 12px;border:1px solid #293229;border-radius:10px;color:var(--green);font-size:10px;letter-spacing:.8px}.sidebar-bottom small{display:block;margin-top:8px;color:var(--muted);font-size:10px;letter-spacing:0}.dashboard-main{width:100%;max-width:1580px;margin:0 auto;padding-bottom:24px}.topbar{position:relative;top:auto;padding:20px 0;border-bottom:1px solid rgba(70,85,67,.28)}.hero{padding:38px 0 26px}.stats{gap:14px}.section-head{margin-top:30px}.table-wrap,.panel{overflow:hidden}.page-footer{padding:24px 0}
+.shell{max-width:none;width:100%;margin:0;padding:0 30px 0 258px;min-height:100vh}.premium-sidebar{position:fixed;z-index:20;inset:0 auto 0 0;width:230px;padding:28px 18px;background:rgba(10,13,11,.97);border-right:1px solid #293229;display:flex;flex-direction:column;gap:9px}.side-brand{display:flex;align-items:center;gap:11px;padding:0 4px 30px;color:var(--text);font-size:13px;font-weight:850;letter-spacing:.8px;text-decoration:none}.side-brand img{border-radius:9px}.side-brand small{display:block;margin-top:5px;color:var(--muted);font-size:9px;letter-spacing:1.4px}.side-label{margin:18px 9px 5px;color:#657060;font-size:9px;font-weight:800;letter-spacing:1.5px}.side-link{display:flex;align-items:center;gap:12px;padding:12px 13px;border:1px solid transparent;border-radius:8px;color:#9aa497;font-size:12px;text-decoration:none;transition:all .18s}.side-link:hover,.side-link.active{background:rgba(198,255,77,.08);border-color:rgba(198,255,77,.15);color:var(--green)}.sidebar-bottom{margin-top:auto;padding:15px 12px;border:1px solid #293229;border-radius:10px;color:var(--green);font-size:10px;letter-spacing:.8px}.sidebar-bottom small{display:block;margin-top:8px;color:var(--muted);font-size:10px;letter-spacing:0}.dashboard-main{width:100%;max-width:none;margin:0;padding-bottom:24px}.topbar{position:relative;top:auto;padding:20px 0;border-bottom:1px solid rgba(70,85,67,.28)}.hero{padding:38px 0 26px}.stats{gap:14px}.section-head{margin-top:30px}.table-wrap,.panel{overflow:hidden}.page-footer{padding:24px 0}
 @media(max-width:900px){.shell{padding:0 18px 0 210px}.premium-sidebar{width:190px;padding:22px 12px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.shell{padding:0 14px}.premium-sidebar{position:relative;inset:auto;width:100%;padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;border-right:0;border-bottom:1px solid #293229}.side-brand{grid-column:1/-1;padding:4px 5px 12px}.side-label,.sidebar-bottom{display:none}.side-link{padding:9px;font-size:11px}.topbar{gap:12px;flex-wrap:wrap}.hero{padding:28px 0 20px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}}
 
@@ -296,5 +296,33 @@ tbody tr:hover{
     opacity:1;
     transform:translateY(0);
   }
+}
+
+
+.hot-badge,
+.healthy-badge,
+.watch-badge,
+.risk-badge,
+.whale-badge,
+.active-badge,
+.new-badge {
+  margin-right: 5px;
+  margin-bottom: 4px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+  margin-bottom: 3px;
+  align-items: center;
+}
+
+.badge-row span {
+  margin-left: 0;
 }
 
