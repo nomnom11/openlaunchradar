@@ -635,3 +635,40 @@ export function confidenceScore(row: TokenRow): number {
   return Math.min(100, score);
 }
 
+
+export function volumeSpikeScore(
+  row: TokenRow,
+  previousVolume: number = 0
+): number {
+
+  const current = volume24h(row) ?? 0;
+
+  if (!previousVolume || previousVolume <= 0) {
+    return 0;
+  }
+
+  const change =
+    ((current - previousVolume) / previousVolume) * 100;
+
+  if (change >= 300) return 100;
+  if (change >= 200) return 80;
+  if (change >= 100) return 60;
+  if (change >= 50) return 40;
+
+  return 0;
+}
+
+
+export function spikeLabel(
+  row: TokenRow,
+  previousVolume: number = 0
+): string {
+
+  const score = volumeSpikeScore(row, previousVolume);
+
+  if (score >= 80) return "SPIKE";
+  if (score >= 40) return "RISING";
+
+  return "";
+}
+

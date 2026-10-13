@@ -187,3 +187,24 @@ input:focus,select:focus,button:focus-visible{outline:2px solid rgba(198,255,77,
   color:#22c55e;
 }
 
+
+.spike-badge{
+  margin-left:5px;
+  background:#dc2626;
+  color:white;
+  padding:2px 6px;
+  border-radius:5px;
+  font-size:10px;
+  font-weight:700;
+}
+
+.rising-badge{
+  margin-left:5px;
+  background:#2563eb;
+  color:white;
+  padding:2px 6px;
+  border-radius:5px;
+  font-size:10px;
+  font-weight:700;
+}
+
