@@ -241,3 +241,26 @@ input:focus,select:focus,button:focus-visible{outline:2px solid rgba(198,255,77,
   font-weight:800;
 }
 
+
+.about-page{
+  max-width:900px;
+  margin:40px auto;
+  padding:20px;
+}
+
+.about-page h1{
+  margin-bottom:20px;
+}
+
+.about-page h2{
+  margin-top:32px;
+}
+
+.about-page p{
+  line-height:1.7;
+}
+
+.about-page li{
+  margin:8px 0;
+}
+
