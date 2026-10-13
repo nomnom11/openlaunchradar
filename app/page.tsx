@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, hotScore, badgeType, riskSignal, volumeAll, radarVolume, volume24h, momentum24h, rankingReasons, tokenImage, type TokenRow } from "@/lib/tokens";
+import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, hotScore, badgeType, riskSignal, volumeAll, radarVolume, volume24h, momentum24h, qualityScore, rankingReasons, tokenImage, type TokenRow } from "@/lib/tokens";
 
 type ApiResponse = { tokens: TokenRow[]; errors?: string[]; source?: string; fetchedAt?: string };
 type HistoryPoint = { time: string; timestamp: number; volume: number };
@@ -110,7 +110,7 @@ export default function Home() {
       return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || badgeType(row).includes("HOT"));
     });
     filtered.sort((a, b) => {
-      if (sort === "volume") { const priority = (row: TokenRow) => { const m24 = momentum24h(row); const activePenalty = m24 <= 0 ? -5000000 : 0; return m24 * 1000000 + hotScore(row) * 10000 + (radarVolume(row) ?? 0) + activePenalty; }; return priority(b) - priority(a); }
+      if (sort === "volume") { const priority = (row: TokenRow) => { const quality = qualityScore(row); const momentum = momentum24h(row); const hot = hotScore(row); const volume = radarVolume(row) ?? 0; const inactivePenalty = volume24h(row) <= 0 ? -5000000 : 0; return quality * 400000 + momentum * 30000 + hot * 2000 + volume + inactivePenalty; }; return priority(b) - priority(a); }
       if (sort === "mcap") return (marketCap(b) ?? -1) - (marketCap(a) ?? -1);
       if (sort === "trades") return (tradeCount(b) ?? -1) - (tradeCount(a) ?? -1);
       const scoreA = trendScore(a);
