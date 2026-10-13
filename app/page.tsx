@@ -1,7 +1,7 @@
  "use client";
 
 import Image from "next/image";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { age, buys, holders, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, hotScore, badgeType, riskSignal, volumeAll, radarVolume, volume24h, momentum24h, qualityScore, rankingReasons, confidenceScore, flowSignal, buyAccelerationScore, earlyEntryScore, radarScore, radarLabel, tokenImage, type TokenRow } from "@/lib/tokens";
 
@@ -199,13 +199,13 @@ export default function Home() {
 
 
     <section className="panel history-panel" id="history">
-      <div className="panel-head"><div><p className="eyebrow">VOLUME HISTORY</p><h3>Token volume over time</h3></div><span className="model-tag">LOCAL</span></div>
-      <p className="panel-copy">Token volume snapshots collected while the radar is running.</p>
+      <div className="panel-head"><div><p className="eyebrow">MARKET ACTIVITY</p><h3>Volume Momentum Timeline</h3></div><span className="model-tag">RADAR MODEL</span></div>
+      <p className="panel-copy">Local volume snapshots collected during radar monitoring sessions.</p>
       <select value={activeHistoryId} onChange={(e) => setSelectedHistoryToken(e.target.value)} disabled={!historyTokenIds.length}>
         {historyTokenIds.map((id) => { const row = data.tokens.find((item) => `${item.chain}:${tokenAddress(item)}` === id); return <option key={id} value={id}>{row ? `${tokenName(row)} (${tokenSymbol(row)})` : id}</option>; })}
       </select>
       <span className="counter">{historyChartData.length} points</span>
-      {historyChartData.length >= 2 ? <div style={{width:"100%",height:280}}><ResponsiveContainer width="100%" height="100%"><AreaChart data={historyChartData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="time"/><YAxis tickFormatter={(v) => compact(v)}/><Tooltip formatter={(v) => [money(Number(v)), "Volume"]}/><Area type="monotone" dataKey="volume" stroke="#38bdf8" fill="#38bdf8" fillOpacity={0.18}/></AreaChart></ResponsiveContainer></div> : <div className="empty-small">Collecting volume history.<small>Keep this page open for multiple refreshes.</small></div>}
+      {historyChartData.length >= 2 ? <div style={{width:"100%",height:280}}><ResponsiveContainer width="100%" height="100%"><LineChart data={historyChartData}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="time"/><YAxis tickFormatter={(v) => compact(v)}/><Tooltip formatter={(v) => [money(Number(v)), "Volume"]}/><Line type="monotone" dataKey="volume" stroke="#38bdf8" strokeWidth={3} dot={false}/></LineChart></ResponsiveContainer></div> : <div className="empty-small">Collecting volume history.<small>Keep this page open for multiple refreshes.</small></div>}
     </section>
 \n    <section className="bottom-grid" id="alerts">
       <div className="panel"><div className="panel-head"><div><p className="eyebrow">RADAR AGENT</p><h3>Activity alerts</h3></div><span className="counter">{alerts.length}</span></div><p className="panel-copy">Local alerts are generated when the API-returned volume field increases by ≥50% and the difference exceeds $100 between fetches. This is not hourly volume history from the provider.</p>
