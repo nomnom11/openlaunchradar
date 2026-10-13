@@ -179,3 +179,11 @@ input:focus,select:focus,button:focus-visible{outline:2px solid rgba(198,255,77,
   border-radius:4px;
 }
 
+
+.confidence{
+  margin-top:4px;
+  font-size:11px;
+  font-weight:700;
+  color:#22c55e;
+}
+

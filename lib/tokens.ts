@@ -510,3 +510,128 @@ export function rankingReasons(row: TokenRow): string[] {
 
   return reasons.slice(0, 4);
 }
+
+export function qualityScore(row: TokenRow): number {
+  const volume24 = volume24h(row) ?? 0;
+  const volume = radarVolume(row) ?? 0;
+
+  const buys = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount"
+  ]) ?? 0;
+
+  const sells = numeric(row, [
+    "sells",
+    "sell_count",
+    "sells_24h",
+    "sellCount"
+  ]) ?? 0;
+
+  const holdersCount = numeric(row, [
+    "holders"
+  ]) ?? 0;
+
+  const totalTrades = buys + sells;
+
+  const buyPressure =
+    totalTrades > 0
+      ? buys / totalTrades
+      : 0;
+
+  const volumeScore = Math.min(
+    40,
+    (Math.log10(1 + volume24) / Math.log10(1000000)) * 40
+  );
+
+  const pressureScore =
+    Math.min(25, buyPressure * 25);
+
+  const holderScore =
+    Math.min(
+      20,
+      (Math.log10(1 + holdersCount) / Math.log10(1000)) * 20
+    );
+
+  const liquidityScore =
+    Math.min(
+      15,
+      (Math.log10(1 + volume) / Math.log10(10000000)) * 15
+    );
+
+  let penalty = 0;
+
+  if (volume24 < 100) penalty -= 30;
+
+  if (totalTrades < 50) penalty -= 20;
+
+  if (buyPressure < 0.4 && totalTrades > 0) {
+    penalty -= 15;
+  }
+
+  return Math.round(
+    volumeScore +
+    pressureScore +
+    holderScore +
+    liquidityScore +
+    penalty
+  );
+}
+
+
+export function confidenceScore(row: TokenRow): number {
+  const volume24 = volume24h(row) ?? 0;
+  const buysCount = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount"
+  ]) ?? 0;
+
+  const sellsCount = numeric(row, [
+    "sells",
+    "sell_count",
+    "sells_24h",
+    "sellCount"
+  ]) ?? 0;
+
+  const holdersCount = numeric(row, [
+    "holders"
+  ]) ?? 0;
+
+  let score = 0;
+
+
+  // Real 24h activity
+  if (volume24 >= 10000) score += 30;
+  else if (volume24 >= 1000) score += 20;
+  else if (volume24 > 0) score += 10;
+
+
+  // Trading activity
+  const trades = buysCount + sellsCount;
+
+  if (trades >= 5000) score += 25;
+  else if (trades >= 500) score += 15;
+  else if (trades >= 50) score += 8;
+
+
+  // Holder quality
+  if (holdersCount >= 500) score += 25;
+  else if (holdersCount >= 100) score += 15;
+  else if (holdersCount >= 20) score += 8;
+
+
+  // Buy pressure
+  if (trades > 0) {
+    const pressure = buysCount / trades;
+
+    if (pressure >= 0.6) score += 20;
+    else if (pressure >= 0.5) score += 10;
+  }
+
+
+  return Math.min(100, score);
+}
+
