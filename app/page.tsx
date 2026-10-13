@@ -110,7 +110,7 @@ export default function Home() {
       return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || badgeType(row).includes("HOT"));
     });
     filtered.sort((a, b) => {
-      if (sort === "volume") { const priority = (row: TokenRow) => { const badge = badgeType(row); return (badge === "WHALE" ? 4 : badge === "HOT" ? 3 : badge === "ACTIVE" ? 2 : badge === "NEW" ? 1 : 0) * 1000000 + (hotScore(row) ?? 0) * 1000 + (radarVolume(row) ?? 0); }; return priority(b) - priority(a); }
+      if (sort === "volume") { const priority = (row: TokenRow) => { const badge = badgeType(row); const rank = badge.includes("WHALE") && badge.includes("HOT") ? 5 : badge.includes("HOT") ? 4 : badge.includes("WHALE") ? 3 : badge.includes("ACTIVE") ? 2 : badge.includes("NEW") ? 1 : 0; return rank * 1000000 + hotScore(row) * 1000 + (radarVolume(row) ?? 0); }; return priority(b) - priority(a); }
       if (sort === "mcap") return (marketCap(b) ?? -1) - (marketCap(a) ?? -1);
       if (sort === "trades") return (tradeCount(b) ?? -1) - (tradeCount(a) ?? -1);
       const scoreA = trendScore(a);
