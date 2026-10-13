@@ -734,3 +734,56 @@ export function flowSignal(row: TokenRow): string {
   return "STRONG SELL FLOW";
 }
 
+
+export function earlyEntryScore(row: TokenRow): number {
+  const confidence = confidenceScore(row);
+  const volumeSpike = volumeSpikeScore(row);
+  const flow = flowSignal(row);
+
+  let score = confidence * 0.4;
+  score += volumeSpike * 0.3;
+
+  if (flow === "STRONG BUY FLOW") score += 30;
+  else if (flow === "BUY PRESSURE") score += 15;
+  else if (flow === "SELL PRESSURE") score -= 15;
+  else if (flow === "STRONG SELL FLOW") score -= 30;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+
+export function radarScore(row: TokenRow): number {
+  const quality = qualityScore(row);
+  const confidence = confidenceScore(row);
+  const early = earlyEntryScore(row);
+  const momentum = momentum24h(row);
+  const hot = hotScore(row);
+
+  let score =
+    quality * 0.35 +
+    confidence * 0.25 +
+    early * 0.20 +
+    momentum * 0.15 +
+    hot * 0.05;
+
+  const flow = flowSignal(row);
+
+  if (flow === "STRONG BUY FLOW") score += 10;
+  else if (flow === "BUY PRESSURE") score += 5;
+  else if (flow === "SELL PRESSURE") score -= 5;
+  else if (flow === "STRONG SELL FLOW") score -= 10;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+
+export function radarLabel(row: TokenRow): string {
+  const score = radarScore(row);
+
+  if (score >= 85) return "ELITE";
+  if (score >= 70) return "STRONG";
+  if (score >= 50) return "WATCH";
+
+  return "RISK";
+}
+
