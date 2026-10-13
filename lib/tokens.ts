@@ -224,29 +224,8 @@ export function activityScore(row: TokenRow): number {
 }
 
 
-export function badgeType(row: TokenRow): string {
-  const score = hotScore(row);
-  const volume = numeric(row, ["volume_usd", "volume_24h_usd"]) ?? 0;
-
-  if (score >= 75) return "HOT";
-  if (volume >= 1000000) return "WHALE";
-  if (score >= 45) return "ACTIVE";
-
-  const start = firstValue(row, ["block_time", "created_at", "launch_time"]);
-  if (start) {
-    const days = (Date.now() - new Date(start).getTime()) / 86400000;
-    if (days <= 7) return "NEW";
-  }
-
-  return "";
-}
 export function hotScore(row: TokenRow): number {
-  const volume = numeric(row, [
-    "volume_usd",
-    "volume_24h_usd",
-    "volume24h_usd",
-    "volume_24h",
-  ]) ?? 0;
+  const volume = radarVolume(row) ?? 0;
 
   const buys = numeric(row, ["buys", "buy_count", "buys_24h", "buyCount"]) ?? 0;
   const sells = numeric(row, ["sells", "sell_count", "sells_24h", "sellCount"]) ?? 0;
@@ -261,14 +240,11 @@ export function hotScore(row: TokenRow): number {
   const totalTrades = buys + sells;
   const buyPressure = totalTrades > 0 ? buys / totalTrades : 0.5;
 
-  const pressureScore = Math.max(
-    0,
-    Math.min(35, buyPressure * 35)
-  );
+  const pressureScore = Math.min(35, buyPressure * 35);
 
   const activityScore = Math.min(
     20,
-    (Math.log10(1 + trades) / Math.log10(10000)) * 20
+    (Math.log10(1 + trades + buys + sells) / Math.log10(10000)) * 20
   );
 
   const holderScore = Math.min(
@@ -282,4 +258,32 @@ export function hotScore(row: TokenRow): number {
     activityScore +
     holderScore
   );
+}
+export function badgeType(row: TokenRow): string {
+  const score = hotScore(row);
+  const volume = radarVolume(row) ?? 0;
+  const badges: string[] = [];
+
+  if (volume >= 1000000) badges.push("WHALE");
+
+  if (score >= 75) {
+    badges.push("HOT");
+  } else if (score >= 45) {
+    badges.push("ACTIVE");
+  }
+
+  const start = firstValue(row, [
+    "block_time",
+    "created_at",
+    "launch_time",
+  ]);
+
+  if (start) {
+    const days =
+      (Date.now() - new Date(start).getTime()) / 86400000;
+
+    if (days <= 7) badges.push("NEW");
+  }
+
+  return badges.join(" ");
 }
