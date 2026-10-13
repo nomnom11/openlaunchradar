@@ -121,3 +121,45 @@ input:focus,select:focus,button:focus-visible{outline:2px solid rgba(198,255,77,
   letter-spacing:.7px;
   vertical-align:middle;
 }
+
+.healthy-badge{
+  display:inline-block;
+  margin-left:7px;
+  padding:3px 5px;
+  border:1px solid #16a34a;
+  border-radius:4px;
+  background:#052e16;
+  color:#86efac;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.7px;
+  vertical-align:middle;
+}
+
+.watch-badge{
+  display:inline-block;
+  margin-left:7px;
+  padding:3px 5px;
+  border:1px solid #ca8a04;
+  border-radius:4px;
+  background:#422006;
+  color:#fde047;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.7px;
+  vertical-align:middle;
+}
+
+.risk-badge{
+  display:inline-block;
+  margin-left:7px;
+  padding:3px 5px;
+  border:1px solid #dc2626;
+  border-radius:4px;
+  background:#450a0a;
+  color:#fca5a5;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.7px;
+  vertical-align:middle;
+}
