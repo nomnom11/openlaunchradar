@@ -147,18 +147,84 @@ export function badgeType(row: TokenRow): string {
   const volume = radarVolume(row) ?? 0;
   const badges: string[] = [];
 
-  const buys = numeric(row, ["buys", "buy_count", "buys_24h", "buyCount"]) ?? 0;
-  const sells = numeric(row, ["sells", "sell_count", "sells_24h", "sellCount"]) ?? 0;
-  const buyPressure = (buys + sells) > 0 ? buys / (buys + sells) : 0;
+  const buys = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount"
+  ]) ?? 0;
 
-  if (volume >= 1000000 && buyPressure >= 0.55) badges.push("WHALE");
+  const sells = numeric(row, [
+    "sells",
+    "sell_count",
+    "sells_24h",
+    "sellCount"
+  ]) ?? 0;
 
-  if (score >= 75) {
-    badges.push("HOT");
-  } else if (score >= 45) {
+  const holders = numeric(row, [
+    "holders"
+  ]) ?? 0;
+
+  const trades = numeric(row, [
+    "trades_24h",
+    "trade_count",
+    "trades",
+    "tx_count",
+    "transactions"
+  ]) ?? 0;
+
+  const total = buys + sells;
+
+  const buyPressure =
+    total > 0
+      ? buys / total
+      : 0;
+
+
+  // Large liquidity analysis
+  if (
+    volume >= 1000000 &&
+    buyPressure >= 0.60
+  ) {
+    badges.push("WHALE");
+  } 
+  else if (
+    volume >= 1000000 &&
+    buyPressure >= 0.50
+  ) {
+    badges.push("WHALE WATCH");
+  }
+
+
+  // Market health
+  if (
+    volume >= 100000 &&
+    buyPressure >= 0.65 &&
+    holders >= 100
+  ) {
+    badges.push("HEALTHY");
+  }
+
+
+  // Selling pressure warning
+  if (
+    volume >= 100000 &&
+    buyPressure < 0.45
+  ) {
+    badges.push("RISK");
+  }
+
+
+  // Activity
+  if (
+    score >= 45 ||
+    trades >= 100
+  ) {
     badges.push("ACTIVE");
   }
 
+
+  // New launch
   const start = firstValue(row, [
     "block_time",
     "created_at",
@@ -169,8 +235,11 @@ export function badgeType(row: TokenRow): string {
     const days =
       (Date.now() - new Date(start).getTime()) / 86400000;
 
-    if (days <= 7) badges.push("NEW");
+    if (days <= 7) {
+      badges.push("NEW");
+    }
   }
+
 
   return badges.join(" ");
 }
