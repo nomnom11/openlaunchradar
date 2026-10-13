@@ -753,25 +753,41 @@ export function earlyEntryScore(row: TokenRow): number {
 
 
 export function radarScore(row: TokenRow): number {
+
   const quality = qualityScore(row);
   const confidence = confidenceScore(row);
-  const early = earlyEntryScore(row);
   const momentum = momentum24h(row);
-  const hot = hotScore(row);
+  const early = earlyEntryScore(row);
+
+  const buys = numeric(row, [
+    "buys",
+    "buy_count",
+    "buys_24h",
+    "buyCount"
+  ]) ?? 0;
+
+  const sells = numeric(row, [
+    "sells",
+    "sell_count",
+    "sells_24h",
+    "sellCount"
+  ]) ?? 0;
+
+
+  const trades = buys + sells;
+
+  const buyPressure = trades > 0
+    ? (buys / trades) * 100
+    : 0;
+
 
   let score =
-    quality * 0.35 +
-    confidence * 0.25 +
-    early * 0.20 +
-    momentum * 0.15 +
-    hot * 0.05;
+    quality * 0.30 +
+    confidence * 0.10 +
+    momentum * 0.25 +
+    early * 0.15 +
+    buyPressure * 0.20;
 
-  const flow = flowSignal(row);
-
-  if (flow === "STRONG BUY FLOW") score += 10;
-  else if (flow === "BUY PRESSURE") score += 5;
-  else if (flow === "SELL PRESSURE") score -= 5;
-  else if (flow === "STRONG SELL FLOW") score -= 10;
 
   return Math.max(0, Math.min(100, Math.round(score)));
 }
@@ -782,7 +798,7 @@ export function radarLabel(row: TokenRow): string {
 
   if (score >= 85) return "ELITE";
   if (score >= 70) return "STRONG";
-  if (score >= 50) return "WATCH";
+  if (score >= 55) return "WATCH";
 
   return "RISK";
 }
