@@ -706,14 +706,12 @@ export function buyAccelerationScore(
 
 
 export function flowSignal(row: TokenRow): string {
-
   const buys = numeric(row, [
     "buys",
     "buy_count",
     "buys_24h",
     "buyCount"
   ]) ?? 0;
-
 
   const sells = numeric(row, [
     "sells",
@@ -722,28 +720,17 @@ export function flowSignal(row: TokenRow): string {
     "sellCount"
   ]) ?? 0;
 
-
   const total = buys + sells;
 
-
-  if (total === 0) {
-    return "";
-  }
-
+  if (total === 0) return "";
 
   const pressure = buys / total;
 
+  if (pressure >= 0.70) return "STRONG BUY FLOW";
+  if (pressure >= 0.55) return "BUY PRESSURE";
+  if (pressure >= 0.45) return "NEUTRAL";
+  if (pressure >= 0.35) return "SELL PRESSURE";
 
-  if (pressure >= 0.7) {
-    return "BUY FLOW";
-  }
-
-
-  if (pressure <= 0.35) {
-    return "SELL FLOW";
-  }
-
-
-  return "";
+  return "STRONG SELL FLOW";
 }
 
