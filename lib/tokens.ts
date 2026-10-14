@@ -43,7 +43,16 @@ export function chainName(chain: any) {
 export function numeric(row: TokenRow, keys: string[]) {
   const raw = firstValue(row, keys);
   if (raw === null) return null;
-  const n = typeof raw === "number" ? raw : Number(raw);
+
+  if (typeof raw === "number") return raw;
+
+  const text = String(raw).replace(/[$,]/g, "").trim().toUpperCase();
+
+  const multiplier = text.endsWith("M") ? 1000000 : text.endsWith("K") ? 1000 : 1;
+  const clean = text.replace(/[MK]$/, "");
+
+  const n = Number(clean) * multiplier;
+
   return Number.isFinite(n) ? n : null;
 }
 export function money(value: number | null) {
@@ -83,7 +92,12 @@ export function radarVolume(row: TokenRow) {
 }
 
 export function volume24h(row: TokenRow) {
-  return numeric(row, ["volume_24h_usd", "volume24h_usd", "volume_24h", "volume_usd_24h"]);
+  return numeric(row, [
+    "volume_24h_usd",
+    "volume24h_usd",
+    "volume_24h",
+    "volume_usd_24h"
+  ]);
 }
 export function marketCap(row: TokenRow) {
   return numeric(row, ["fdv_usd", "market_cap_usd", "marketCapUsd", "mcap_usd", "fdv"]);
@@ -245,7 +259,6 @@ export function badgeType(row: TokenRow): string {
 }
 
 export function hotScore(row: TokenRow): number {
-  const volume = radarVolume(row) ?? 0;
   const volume24 = volume24h(row) ?? 0;
 
   const buys = numeric(row, [
@@ -285,10 +298,10 @@ export function hotScore(row: TokenRow): number {
 
 
   // Volume strength 30%
-  const volumeScore = Math.min(
-    30,
-    (Math.log10(1 + volume) / Math.log10(10000000)) * 30
-  );
+    const volumeScore = Math.min(
+      30,
+      (Math.log10(1 + volume24) / Math.log10(10000000)) * 30
+    );
 
 
   // Buyer strength 35%
@@ -471,7 +484,6 @@ export function momentum24h(row: TokenRow): number {
 export function rankingReasons(row: TokenRow): string[] {
   const reasons: string[] = [];
 
-  const volume = radarVolume(row) ?? 0;
 
   const buys = numeric(row, [
     "buys",
@@ -530,7 +542,6 @@ export function rankingReasons(row: TokenRow): string[] {
 
 export function qualityScore(row: TokenRow): number {
   const volume24 = volume24h(row) ?? 0;
-  const volume = radarVolume(row) ?? 0;
 
   const buys = numeric(row, [
     "buys",
@@ -820,3 +831,71 @@ export function radarLabel(row: TokenRow): string {
   return "RISK";
 }
 
+export function whyToken(row: TokenRow): string[] {
+  const reasons: string[] = [];
+  const volume = radarVolume(row) ?? 0;
+
+  const holderCount = holders(row) ?? 0;
+  const tokenAge = age(row);
+
+  const buysCount = buys(row) ?? 0;
+  const totalTrades = tradeCount(row) ?? 0;
+
+  const buyPressure =
+    totalTrades > 0
+      ? (buysCount / totalTrades) * 100
+      : 0;
+
+
+  if (volume >= 50000) {
+    reasons.push("Strong trading activity");
+  } else if (volume >= 5000) {
+    reasons.push("Trading activity detected");
+  } else if (volume < 5000 && totalTrades < 100) {
+    reasons.push("Low trading activity");
+  }
+
+
+  if (totalTrades >= 1000) {
+    reasons.push("Active trading participation");
+  }
+
+
+  if (holderCount >= 500) {
+    reasons.push("Growing holder base");
+  } else if (holderCount >= 100) {
+    reasons.push("Holder activity detected");
+  } else if (holderCount < 50) {
+    reasons.push("Limited holder distribution");
+  }
+
+
+  if (tokenAge) {
+    if (tokenAge.includes("h")) {
+      reasons.push("Fresh launch signal");
+    } else if (tokenAge.includes("d")) {
+      const days = parseInt(tokenAge);
+
+      if (days <= 7) {
+        reasons.push("Early discovery phase");
+      } else if (days <= 21) {
+        reasons.push("Emerging token");
+      }
+    } else if (tokenAge.includes("mo")) {
+      reasons.push("Established token age");
+    }
+  }
+
+
+  if (buyPressure >= 60) {
+    reasons.push("Positive buy pressure");
+  }
+
+
+  if (reasons.length === 0) {
+    reasons.push("Limited signals available");
+  }
+
+
+  return reasons.slice(0, 4);
+}

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buys, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, badgeType, radarVolume, volume24h, tokenImage, holders, age, type TokenRow } from "@/lib/tokens";
+import { buys, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, badgeType, radarVolume, volume24h, tokenImage, holders, age, whyToken, type TokenRow } from "@/lib/tokens";
 
 function isHotToken(row: TokenRow): boolean {
   const volume = radarVolume(row) ?? 0;
@@ -171,7 +171,7 @@ export default function Home() {
 
     <section className="stats">
       <div className="stat"><span>TRACKED TOKENS</span><strong>{data.tokens.length}</strong><small>Combined across 3 chains</small></div>
-      <div className="stat"><span>VOLUME USD · RETURNED DATA</span><strong>{money(totalVolume)}</strong><small>Sum of available volume fields</small></div>
+      <div className="stat"><span>TOTAL VOLUME TRACKED</span><strong>{money(totalVolume)}</strong><small>Combined volume returned by radar sources</small></div>
       <div className="stat"><span>WATCHLIST</span><strong>{watchlist.length.toString().padStart(2, "0")}</strong><small>Saved in this browser</small></div>
       <div className="stat"><span>LAST UPDATED</span><strong className="time-stat">{updatedAt || "—"}</strong><small>{loading ? "Fetching data..." : "Refresh status"}</small></div>
     </section>
@@ -189,7 +189,7 @@ export default function Home() {
 
     <section className="table-wrap" id="radar">
       <div className="table-scroll"><table>
-          <thead><tr><th># / TOKEN</th><th>CHAIN</th><th>PRICE USD</th><th>VOLUME</th><th>VOLUME 24H</th><th>BUYS / SELLS</th><th>TRADES</th><th>MARKET CAP / FDV</th><th>TREND SCORE</th><th>AGE</th><th>HOLDERS</th><th></th></tr></thead>
+          <thead><tr><th># / TOKEN</th><th>CHAIN</th><th>PRICE USD</th><th>TOTAL VOLUME</th><th>VOLUME 24H</th><th>BUYS / SELLS</th><th>TRADES</th><th>MARKET CAP / FDV</th><th>TREND SCORE</th><th>AGE</th><th>HOLDERS</th><th></th></tr></thead>
         <tbody>
           {rows.map((row, index) => {
             const id = `${row.chain}:${tokenAddress(row)}`;
@@ -197,7 +197,7 @@ export default function Home() {
             const ch = chainName(row.chain);
             const address = tokenAddress(row);
             return <tr key={id}>
-              <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{isHotToken(row) && <span className="hot-badge">HOT</span>}{badgeType(row).includes("HEALTHY") && <span className="healthy-badge">HEALTHY</span>}{badgeType(row).includes("WATCH") && <span className="watch-badge">WATCH</span>}{badgeType(row).includes("RISK") && <span className="risk-badge">RISK</span>}{badgeType(row).includes("WHALE") && <span className="whale-badge">WHALE</span>}{badgeType(row).includes("ACTIVE") && <span className="active-badge">ACTIVE</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
+                <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{isHotToken(row) && <span className="hot-badge">HOT</span>}{badgeType(row).includes("HEALTHY") && <span className="healthy-badge">HEALTHY</span>}{badgeType(row).includes("WATCH") && <span className="watch-badge">WATCH</span>}{badgeType(row).includes("RISK") && <span className="risk-badge">RISK</span>}{badgeType(row).includes("WHALE") && <span className="whale-badge">WHALE</span>}{badgeType(row).includes("ACTIVE") && <span className="active-badge">ACTIVE</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<div className="why-token">{whyToken(row).map((reason) => <small key={reason}>✓ {reason}</small>)}</div><small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
               <td><span className={`chain-badge ${ch.toLowerCase()}`}>{ch}</span></td>
               <td className="numeric">{money(price(row))}</td>
               <td className="numeric">{money(radarVolume(row))}</td>

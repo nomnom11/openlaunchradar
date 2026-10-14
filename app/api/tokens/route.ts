@@ -48,12 +48,22 @@ async function getChain(chain: string) {
       (row: any) => row && typeof row === "object" && !Array.isArray(row)
     );
 
-    tokens.push(
-      ...validRows.map((row: any) => ({
-        ...row,
-        chain: row.chain || chain,
-      }))
-    );
+      tokens.push(
+        ...validRows.map((row: any) => ({
+          ...row,
+          chain: row.chain || chain,
+          volume_24h_usd:
+            row.volume_24h_usd ??
+            row.volume24h_usd ??
+            row.volume_24h ??
+            row.volume_usd_24h ??
+            row.volume_usd ??
+            row.volumeUsd ??
+            row.total_volume_usd ??
+            row.totalVolumeUsd ??
+            0,
+        }))
+      );
 
     if (
       validRows.length === 0 ||
