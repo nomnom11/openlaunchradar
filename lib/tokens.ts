@@ -503,6 +503,7 @@ export function rankingReasons(row: TokenRow): string[] {
     "holders"
   ]) ?? 0;
 
+  const volume = radarVolume(row) ?? 0;
   const total = buys + sells;
 
   const buyPressure =
@@ -542,6 +543,7 @@ export function rankingReasons(row: TokenRow): string[] {
 
 export function qualityScore(row: TokenRow): number {
   const volume24 = volume24h(row) ?? 0;
+  const volume = radarVolume(row) ?? 0;
 
   const buys = numeric(row, [
     "buys",
