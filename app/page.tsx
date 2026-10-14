@@ -167,6 +167,15 @@ export default function Home() {
         <p className="hero-copy">Track tokens across Base, Robinhood Chain, and Arc using public data. The trend score is a transparent heuristic, not a price prediction.</p>
         <div className="hero-status"><span className="pulse" /> LIVE MONITORING <small>Auto-refresh every 30 seconds</small></div>
       </div>
+      <div className="radar-animation">
+        <div className="radar-circle">
+          <span className="radar-dot dot-one"></span>
+          <span className="radar-dot dot-two"></span>
+          <span className="radar-dot dot-three"></span>
+          <span className="radar-scan"></span>
+        </div>
+        <p>LIVE SIGNAL SCANNING</p>
+      </div>
     </section>
 
     <section className="stats">
