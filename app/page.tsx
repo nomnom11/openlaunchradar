@@ -3,10 +3,10 @@
 import Image from "next/image";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buys, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, badgeType, radarVolume, volume24h, tokenImage, holders, age, whyToken, type TokenRow } from "@/lib/tokens";
+import { buys, chainName, compact, marketCap, money, price, sells, tokenAddress, tokenName, tokenSymbol, tradeCount, trendScore, badgeType, radarVolume, volumeAll, trustedVolume, volume24h, tokenImage, holders, age, whyToken, type TokenRow } from "@/lib/tokens";
 
 function isHotToken(row: TokenRow): boolean {
-  const volume = radarVolume(row) ?? 0;
+  const volume = trustedVolume(row) ?? 0;
   const volume24 = row.volume_24h_usd ?? row.volume24h_usd ?? row.volume_24h ?? row.volume_usd_24h ?? 0;
   const activity = (buys(row) ?? 0) + (sells(row) ?? 0) + (tradeCount(row) ?? 0);
   const score = trendScore(row) ?? 0;
@@ -67,7 +67,7 @@ export default function Home() {
       setHistory((previous) => {
         const next = { ...previous };
         for (const row of rows) {
-          const v = radarVolume(row);
+          const v = trustedVolume(row);
           if (v === null || !Number.isFinite(v) || v < 0) continue;
           const id = `${row.chain}:${tokenAddress(row)}`;
           const points = next[id] || [];
@@ -86,7 +86,7 @@ export default function Home() {
       const nextValues: Record<string, number> = {};
       rows.forEach((row) => {
         const id = `${row.chain}:${tokenAddress(row)}`;
-        const v = radarVolume(row);
+        const v = trustedVolume(row);
         if (v !== null) {
           nextValues[id] = v;
           const old = lastValuesRef.current[id];
@@ -144,7 +144,7 @@ export default function Home() {
     }).length;
     setTotalPages(Math.max(1, Math.ceil(filteredCount / 50)));
   }, [data, chain, search, watchOnly, watchlist, hotOnly]);
-  const totalVolume = data.tokens.reduce((sum, row) => sum + (radarVolume(row) ?? 0), 0);
+  const totalVolume = data.tokens.reduce((sum, row) => sum + (volumeAll(row) ?? 0), 0);
   const toggleWatch = (id: string) => setWatchlist((old) => old.includes(id) ? old.filter((x) => x !== id) : [...old, id]);
 
   return <main className="shell">
@@ -197,11 +197,11 @@ export default function Home() {
             const ch = chainName(row.chain);
             const address = tokenAddress(row);
             return <tr key={id}>
-                <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{isHotToken(row) && <span className="hot-badge">HOT</span>}{badgeType(row).includes("HEALTHY") && <span className="healthy-badge">HEALTHY</span>}{badgeType(row).includes("WATCH") && <span className="watch-badge">WATCH</span>}{badgeType(row).includes("RISK") && <span className="risk-badge">RISK</span>}{badgeType(row).includes("WHALE") && <span className="whale-badge">WHALE</span>}{badgeType(row).includes("ACTIVE") && <span className="active-badge">ACTIVE</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<div className="why-token">{whyToken(row).map((reason) => <small key={reason}>✓ {reason}</small>)}</div><small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
+                <td><div className="token-cell"><span className="rank">{String(index + 1).padStart(2, "0")}</span><Image className="token-avatar" src={tokenImage(row) || "/token-placeholder.svg"} alt={tokenSymbol(row)} width={34} height={34} unoptimized onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/token-placeholder.svg"; }} /><div><strong>{tokenName(row)}</strong>{isHotToken(row) && <span className="hot-badge">HOT</span>}{badgeType(row).includes("HEALTHY") && <span className="healthy-badge">HEALTHY</span>}{badgeType(row).includes("WATCH") && <span className="watch-badge">WATCH</span>}{badgeType(row).includes("RISK") && <span className="risk-badge">RISK</span>}{badgeType(row).includes("WHALE") && <span className="whale-badge">WHALE</span>}{badgeType(row).includes("ACTIVE") && <span className="active-badge">ACTIVE</span>}{newTokenIds.includes(id) && <span className="new-badge">NEW</span>}<div className="why-token">{whyToken(row).map((reason) => (<small key={reason} className={reason.toLowerCase().includes("anomaly") ? "anomaly-text" : ""}>✓ {reason}</small>))}</div><small>{tokenSymbol(row)} · {address.length > 18 ? `${address.slice(0, 7)}…${address.slice(-5)}` : address}</small></div></div></td>
               <td><span className={`chain-badge ${ch.toLowerCase()}`}>{ch}</span></td>
               <td className="numeric">{money(price(row))}</td>
-              <td className="numeric">{money(radarVolume(row))}</td>
-                <td className="numeric">{money(volume24h(row))}</td>
+              <td className="numeric">{money(trustedVolume(row) === 0 ? 0 : volumeAll(row))}</td>
+                <td className="numeric">{money(trustedVolume(row) === 0 ? 0 : volume24h(row))}</td>
               <td><span className="buy">{b === null ? "—" : compact(b)}</span><span className="muted"> / </span><span className="sell">{s === null ? "—" : compact(s)}</span></td>
               <td className="numeric">{compact(tradeCount(row))}</td>
               <td className="numeric">{money(marketCap(row))}</td>

@@ -326,3 +326,15 @@ tbody tr:hover{
   margin-left: 0;
 }
 
+
+.anomaly-text {
+  color: red;
+  font-weight: 700;
+}
+
+
+.anomaly-text {
+  color: #ef4444;
+  font-weight: 700;
+}
+

@@ -81,6 +81,21 @@ export function volumeAll(row: TokenRow) {
   return numeric(row, ["volume_24h_usd", "volume24h_usd", "volume_24h"]);
 }
 
+export function rawVolume(row: TokenRow) {
+  const values = [
+    numeric(row, ["volume_usd"]),
+    numeric(row, ["volumeUsd"]),
+    numeric(row, ["total_volume_usd"]),
+    numeric(row, ["totalVolumeUsd"]),
+    numeric(row, ["volume_24h_usd"]),
+    numeric(row, ["volume24h_usd"]),
+    numeric(row, ["volume_24h"]),
+    numeric(row, ["volume_usd_24h"])
+  ].filter((v): v is number => v !== null);
+
+  return values.length ? Math.max(...values) : null;
+}
+
 export function radarVolume(row: TokenRow) {
   const all = volumeAll(row);
   const v24 = numeric(row, ["volume_24h_usd", "volume24h_usd", "volume_24h", "volume_usd_24h"]);
@@ -98,7 +113,34 @@ export function volume24h(row: TokenRow) {
     "volume_24h",
     "volume_usd_24h"
   ]);
+  }
+
+export function trustedVolume(row: TokenRow) {
+  const volume = volumeAll(row) ?? 0;
+
+  const trades = numeric(row, [
+    "trades_24h",
+    "trade_count",
+    "trades",
+    "tx_count",
+    "transactions"
+  ]) ?? 0;
+
+  const holders = numeric(row, [
+    "holders"
+  ]) ?? 0;
+
+  if (
+    volume >= 1000000 &&
+    trades < 20 &&
+    holders < 10
+  ) {
+    return 0;
+  }
+
+  return volume;
 }
+
 export function marketCap(row: TokenRow) {
   return numeric(row, ["fdv_usd", "market_cap_usd", "marketCapUsd", "mcap_usd", "fdv"]);
 }
@@ -158,7 +200,8 @@ export function activityScore(row: TokenRow): number {
 
 export function badgeType(row: TokenRow): string {
   const score = hotScore(row);
-  const volume = radarVolume(row) ?? 0;
+  const volume = trustedVolume(row) ?? 0;
+    const originalVolume = rawVolume(row) ?? 0;
   const badges: string[] = [];
 
   const buys = numeric(row, [
@@ -189,6 +232,10 @@ export function badgeType(row: TokenRow): string {
 
   const total = buys + sells;
 
+    if (originalVolume >= 1000000 && volume === 0 && trades < 20 && holders < 10) {
+      badges.push("ANOMALY");
+    }
+
   const buyPressure =
     total > 0
       ? buys / total
@@ -196,18 +243,20 @@ export function badgeType(row: TokenRow): string {
 
 
   // Large liquidity analysis
-  if (
-    volume >= 1000000 &&
-    buyPressure >= 0.60
-  ) {
-    badges.push("WHALE");
-  } 
-  else if (
-    volume >= 1000000 &&
-    buyPressure >= 0.50
-  ) {
-    badges.push("WHALE WATCH");
-  }
+    if (
+      volume >= 1000000 &&
+      trades >= 20 &&
+      buyPressure >= 0.60
+    ) {
+      badges.push("WHALE");
+    }
+    else if (
+      volume >= 1000000 &&
+      trades >= 20 &&
+      buyPressure >= 0.50
+    ) {
+      badges.push("WHALE WATCH");
+    }
 
 
   // Market health
@@ -297,11 +346,17 @@ export function hotScore(row: TokenRow): number {
       : 0;
 
 
-  // Volume strength 30%
+    // Volume strength with activity confidence
+    const volumeConfidence =
+      trades >= 100 ? 1 :
+      trades >= 20 ? 0.7 :
+      trades >= 5 ? 0.4 :
+      0;
+
     const volumeScore = Math.min(
       30,
       (Math.log10(1 + volume24) / Math.log10(10000000)) * 30
-    );
+    ) * volumeConfidence;
 
 
   // Buyer strength 35%
@@ -365,7 +420,7 @@ export function hotScore(row: TokenRow): number {
   );
 }
 export function riskSignal(row: TokenRow): string {
-  const volume = radarVolume(row) ?? 0;
+  const volume = trustedVolume(row) ?? 0;
 
   const buys = numeric(row, [
     "buys",
@@ -503,7 +558,7 @@ export function rankingReasons(row: TokenRow): string[] {
     "holders"
   ]) ?? 0;
 
-  const volume = radarVolume(row) ?? 0;
+  const volume = trustedVolume(row) ?? 0;
   const total = buys + sells;
 
   const buyPressure =
@@ -514,7 +569,10 @@ export function rankingReasons(row: TokenRow): string[] {
     reasons.push("Strong 24h volume");
   }
 
-  if (buyPressure >= 0.55) {
+  if (
+    buyPressure >= 0.55 &&
+    total >= 5
+  ) {
     reasons.push("Positive buy pressure");
   }
 
@@ -543,7 +601,7 @@ export function rankingReasons(row: TokenRow): string[] {
 
 export function qualityScore(row: TokenRow): number {
   const volume24 = volume24h(row) ?? 0;
-  const volume = radarVolume(row) ?? 0;
+  const volume = trustedVolume(row) ?? 0;
 
   const buys = numeric(row, [
     "buys",
@@ -835,7 +893,16 @@ export function radarLabel(row: TokenRow): string {
 
 export function whyToken(row: TokenRow): string[] {
   const reasons: string[] = [];
-  const volume = radarVolume(row) ?? 0;
+  const volume = trustedVolume(row) ?? 0;
+  const originalVolume = rawVolume(row) ?? 0;
+
+    console.log("ANOMALY DEBUG", {
+      name: tokenName(row),
+      originalVolume,
+      volume,
+      holderCount: holders(row) ?? 0,
+      totalTrades: tradeCount(row) ?? 0
+    });
 
   const holderCount = holders(row) ?? 0;
   const tokenAge = age(row);
@@ -848,6 +915,15 @@ export function whyToken(row: TokenRow): string[] {
       ? (buysCount / totalTrades) * 100
       : 0;
 
+
+  if (
+    originalVolume >= 1000000 &&
+    volume === 0 &&
+    totalTrades < 20 &&
+    holderCount < 10
+  ) {
+    reasons.push("Volume anomaly detected");
+  }
 
   if (volume >= 50000) {
     reasons.push("Strong trading activity");
@@ -889,9 +965,12 @@ export function whyToken(row: TokenRow): string[] {
   }
 
 
-  if (buyPressure >= 60) {
-    reasons.push("Positive buy pressure");
-  }
+    if (
+      buyPressure >= 60 &&
+      totalTrades >= 5
+    ) {
+      reasons.push("Positive buy pressure");
+    }
 
 
   if (reasons.length === 0) {
