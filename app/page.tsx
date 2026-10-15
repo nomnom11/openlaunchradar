@@ -28,6 +28,7 @@ export default function Home() {
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [watchOnly, setWatchOnly] = useState(false);
   const [hotOnly, setHotOnly] = useState(false);
+  const [tokenView, setTokenView] = useState("leaderboard");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [alerts, setAlerts] = useState<string[]>([]);
@@ -114,7 +115,9 @@ export default function Home() {
       const id = `${row.chain}:${tokenAddress(row)}`;
       const matchesChain = chain === "all" || String(row.chain).toLowerCase().includes(chain);
       const query = `${tokenName(row)} ${tokenSymbol(row)} ${tokenAddress(row)}`.toLowerCase();
-      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || isHotToken(row));
+      const isAnomaly = badgeType(row).includes("ANOMALY");
+      const matchesView = tokenView === "anomaly" ? isAnomaly : !isAnomaly;
+      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || isHotToken(row)) && matchesView;
     });
     const pageSize = 50;
     const startIndex = (page - 1) * pageSize;
@@ -133,17 +136,19 @@ export default function Home() {
     });
     filtered = filtered.slice(startIndex, startIndex + pageSize);
     return filtered;
-  }, [data, chain, search, watchOnly, watchlist, sort, hotOnly]);
+  }, [data, chain, search, watchOnly, watchlist, sort, hotOnly, tokenView, page]);
 
   useEffect(() => {
     const filteredCount = data.tokens.filter((row) => {
       const id = `${row.chain}:${tokenAddress(row)}`;
       const matchesChain = chain === "all" || String(row.chain).toLowerCase().includes(chain);
       const query = `${tokenName(row)} ${tokenSymbol(row)} ${tokenAddress(row)}`.toLowerCase();
-      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || isHotToken(row));
+      const isAnomaly = badgeType(row).includes("ANOMALY");
+      const matchesView = tokenView === "anomaly" ? isAnomaly : !isAnomaly;
+      return matchesChain && query.includes(search.toLowerCase()) && (!watchOnly || watchlist.includes(id)) && (!hotOnly || isHotToken(row)) && matchesView;
     }).length;
     setTotalPages(Math.max(1, Math.ceil(filteredCount / 50)));
-  }, [data, chain, search, watchOnly, watchlist, hotOnly]);
+  }, [data, chain, search, watchOnly, watchlist, hotOnly, tokenView]);
   const totalVolume = data.tokens.reduce((sum, row) => sum + (volumeAll(row) ?? 0), 0);
   const toggleWatch = (id: string) => setWatchlist((old) => old.includes(id) ? old.filter((x) => x !== id) : [...old, id]);
 
@@ -187,6 +192,10 @@ export default function Home() {
 
     <section className="section-head"><div><p className="eyebrow">RADAR SCANNER</p><h2>Token explorer <span className="count">{rows.length} results</span></h2></div><div style={{display:"flex",gap:8,flexWrap:"wrap"}}><button className="watch-filter" onClick={() => { const blob = new Blob([JSON.stringify(data.tokens.filter((row) => watchlist.includes(`${row.chain}:${tokenAddress(row)}`)).map((row) => ({name: row.name ?? row.token_name ?? row.symbol ?? "Unknown token", symbol: row.symbol ?? row.token_symbol ?? "—", chain: row.chain ?? "—", address: row.token ?? row.address ?? row.token_address ?? row.tokenAddress ?? row.contract_address ?? null, price_usd: row.price_usd ?? row.priceUsd ?? row.token_price_usd ?? null, volume_24h_usd: row.volume_24h_usd ?? row.volume24h_usd ?? row.volume_24h ?? row.volume_usd_24h ?? null, market_cap_usd: row.fdv_usd ?? row.market_cap_usd ?? row.marketCapUsd ?? row.mcap_usd ?? row.fdv ?? null, trend_score: trendScore(row)})), null, 2)], {type:"application/json"}); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "openlaunch-watchlist.json"; a.click(); URL.revokeObjectURL(url); }}>Export Watchlist</button><button className={`watch-filter ${watchOnly ? "selected" : ""}`} onClick={() => { setPage(1); setWatchOnly(!watchOnly); }}>☆ {watchOnly ? "Watchlist enabled" : "Watchlist"}</button></div></section>
     <section className="filters">
+      <div className="hot-filter" aria-label="Token view">
+        <button type="button" className={tokenView === "leaderboard" ? "active" : ""} onClick={() => { setPage(1); setTokenView("leaderboard"); }}>Leaderboard</button>
+        <button type="button" className={tokenView === "anomaly" ? "active" : ""} onClick={() => { setPage(1); setTokenView("anomaly"); }}>Anomaly Tokens ({data.tokens.filter((row) => badgeType(row).includes("ANOMALY")).length})</button>
+      </div>
       <label className="searchbox">⌕ <input value={search} onChange={(e) => { setPage(1); setSearch(e.target.value); }} placeholder="Search name, ticker, or address..." /></label>
       <div className="hot-filter"><button type="button" className={!hotOnly ? "active" : ""} onClick={() => { setPage(1); setHotOnly(false); }}>All Tokens</button><button type="button" className={hotOnly ? "active" : ""} onClick={() => { setPage(1); setHotOnly(true); }}>ACTIVE Only</button></div>
       <select value={chain} onChange={(e) => { setPage(1); setChain(e.target.value); }} aria-label="Select chain"><option value="all">All chains</option><option value="base">Base</option><option value="robinhood">Robinhood Chain</option><option value="arc">Arc</option></select>
